@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <RootNamespace>EasySQL</RootNamespace>
+
+    <!-- NuGet Package Metadata -->
+    <PackageId>EasySQL</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Caror Jiang</Authors>
+    <Description>A lightweight, cross-database SQL query builder for .NET. Supports SQL Server, MySQL, PostgreSQL, Oracle, SQLite, MS Access, and DB2 with a fluent API for building complex queries including joins, unions, pagination, and dialect-aware SQL generation.</Description>
+    <PackageTags>sql;query-builder;orm;sql-server;mysql;postgresql;oracle;sqlite;database;cross-platform</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/caror/EasySQL</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/caror/EasySQL</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+</Project>

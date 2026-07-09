@@ -1,0 +1,140 @@
+﻿<%@ Template Language="C#" TargetLanguage="C#" %>
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Data" %>
+
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Data" %>
+<%@ Import Namespace="System.Text" %>
+<%@ Import Namespace="System.Globalization" %>
+<%@ Import Namespace="System.Collections.Generic" %>
+<%@ Import Namespace="System.IO" %>
+<%@ Property Name="SourceTable" Type="SchemaExplorer.TableSchema"  Category="Context" Description="对应的数据表架构对象。" %>
+<%@ Property Name="NamespaceName" Type="String"  Category="OutConfig" Default="Kanyo.Db.Entity" Description="类的命名空间名称。" %>
+
+<%
+   string tableName=SourceTable.Name;
+   string className=GetClassName(SourceTable);
+   NamespaceName=String.IsNullOrEmpty(NamespaceName) ? "Kanyo.Db.Entity" : NamespaceName;
+%>
+using Kanyo.EasySQL;
+
+namespace <%=NamespaceName%>
+{
+	<% if(!String.IsNullOrEmpty(SourceTable.Description))	{%>
+    ///<summary> 
+	/// <%=SourceTable.Description %> Schema。
+    ///</summary>
+	<%}%>
+	public class <%= className %>:SchemaBase
+	{   
+        #region 数据表名及列名的常量定义
+        
+     	<% if(!String.IsNullOrEmpty(SourceTable.Description))	{%>
+        ///<summary> 
+    	/// 列名常量，<%=SourceTable.Description %>
+        ///</summary>
+    	<%}%>
+        public const string <%=SourceTable.Name.ToUpper()%>="<%=SourceTable.Name%>";
+        
+		<% 
+			foreach (ColumnSchema column in SourceTable.Columns)
+			{ 
+		%>
+    	<% if(!String.IsNullOrEmpty(column.Description))	{%>
+        ///<summary> 
+    	/// 列名常量，<%=column.Description %>
+        ///</summary>
+    	<%}%>
+		public const string <%=column.Name.ToUpper()%>="<%=column.Name%>";
+		
+		<%
+           }
+		%>
+        #endregion
+    
+    	#region 实现SchemaBase抽象类接口。
+		/// <summary>
+        /// 获取表（或视图）架构的名称。
+        /// </summary>
+        /// <remarks>该名称与数据库里面的名称对应。</remarks>
+		public override string TableName
+		{
+			get { return <%=SourceTable.Name.ToUpper()%>; }
+		}
+
+        #endregion
+        
+        #region 构造函数
+        
+        /// <summary>
+        /// 构造函数。
+        /// </summary>
+        /// <param name="alias">表（或视图）的别名。</param>
+        /// <param name="dialect">数据方言。</param>
+        public <%= className %>(string alias, ISQLDialect dialect) :base(alias, dialect) { }
+		
+		 /// <summary>
+         /// 构造函数。
+         /// </summary>
+         /// <param name="alias">表（或视图）的别名。</param>
+         public <%= className %>(string alias):this(alias,null) {}
+		
+         /// <summary>
+         /// 构造函数。
+         /// </summary>
+ 		 public <%= className %>():this(string.Empty,null) {}
+        
+		#endregion
+        
+        #region 列名称属性
+		<% 
+			foreach (ColumnSchema column in SourceTable.Columns)
+			{ 
+		%>
+    	<% if(!String.IsNullOrEmpty(column.Description))	{%>
+        ///<summary> 
+    	/// <%=column.Description %>
+        ///</summary>
+    	<%}%>
+		public string <%=column.Name%> { get { return <%=column.Name.ToUpper()%>; } }
+		
+		<%
+           }
+		%>
+        #endregion
+        
+        #region 格式化列名称访问方法
+        <% 
+			foreach (ColumnSchema column in SourceTable.Columns)
+			{ 
+		%>
+    	<% if(!String.IsNullOrEmpty(column.Description))	{%>
+        ///<summary> 
+    	/// <%=column.Description %>
+        /// <param name="needPrefix">是否需要表别名限定符。</param>
+        ///</summary>
+    	<%}%>
+		public string Get<%=column.Name%>(bool needPrefix=true)
+        {
+            return this.QuoteField(<%=column.Name.ToUpper()%>,needPrefix);
+        }
+		
+		<%
+           }
+		%>
+        #endregion
+    }
+}
+<script runat="template">
+
+public string GetClassName(TableSchema table)
+{
+	string name = table.Name;
+    if (name.EndsWith("s")) // this bit is probably only going to work for US/UK names
+	{
+		name = name.Substring(0, name.Length - 1);
+	}
+	return name + "Schema";
+}
+
+</script>

@@ -1,0 +1,114 @@
+﻿<%@ Template Language="C#" TargetLanguage="C#" %>
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Data" %>
+
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Data" %>
+<%@ Import Namespace="System.Text" %>
+<%@ Import Namespace="System.Globalization" %>
+<%@ Import Namespace="System.Collections.Generic" %>
+<%@ Import Namespace="System.IO" %>
+<%@ Property Name="SourceTable" Type="SchemaExplorer.TableSchema"  Category="Context" Description="对应的数据表架构对象。" %>
+<%@ Property Name="NamespaceName" Type="String"  Category="OutConfig" Default="Kanyo.Db.Entity" Description="类的命名空间名称。" %>
+<%@ Property Name="VersionNamespaceName" Type="String"  Category="OutConfig" Default="Kanyo.Db.Entity" Description="类的命名空间名称。" %>
+<%@ Property Name="IsVersion" Type="Boolean"  Category="OutConfig" Default="True" Description="是否生成版本控制接口。" %>
+
+<%
+   string tableName=SourceTable.Name;
+   string className=GetClassName(SourceTable);
+   NamespaceName=String.IsNullOrEmpty(NamespaceName) ? "Kanyo.Db.Entity" : NamespaceName;
+   VersionNamespaceName=String.IsNullOrEmpty(VersionNamespaceName) ? "Kanyo.Db.Entity" : VersionNamespaceName;
+%>
+using System;
+using Dapper.Contrib.Extensions;
+<%if(SourceTable.Columns.Contains("Version") && IsVersion && VersionNamespaceName!=NamespaceName) {%>
+using <%=VersionNamespaceName%>;
+<%} %>
+
+namespace <%=NamespaceName%>
+{
+	<% if(!String.IsNullOrEmpty(SourceTable.Description))	{%>
+    ///<summary> 
+	/// <%=SourceTable.Description %>
+    ///</summary>
+	<%}%>
+    [Table("<%=SourceTable.Name%>")]
+	public class <%= className %><%=(SourceTable.Columns.Contains("Version") && IsVersion) ? ":IDataVersion" : ""%>
+	{        
+		<% 
+			foreach (ColumnSchema column in SourceTable.Columns)
+			{ 
+				string	pname = GetPropertyName(column);
+		%>
+    	<% if(!String.IsNullOrEmpty(column.Description))	{%>
+        ///<summary> 
+    	/// <%=column.Description %>
+        ///</summary>
+    	<%}%>
+        <%if(column.IsPrimaryKeyMember && (pname.ToLower()!="id" || !((bool)column.ExtendedProperties["CS_IsIdentity"].Value))) { %>
+        [<%= ((bool)column.ExtendedProperties["CS_IsIdentity"].Value) ? "Key" : "ExplicitKey"%>]
+        <%}%>
+		public <%=GetCSharpVariableType(column)%> <%=pname%> {get;set;}
+		
+		<%
+           }
+		%>
+    }
+}
+<script runat="template">
+
+public string GetPropertyName(ColumnSchema column)
+{
+	string propertyName = column.Name;
+	return propertyName;
+}
+
+public string GetCSharpVariableType(ColumnSchema column)
+{
+	//if (column.Name.EndsWith("TypeCode") ) 
+	//	return column.Name;
+	
+	switch (column.DataType)
+	{
+		case DbType.AnsiString: 			return "string";
+		case DbType.AnsiStringFixedLength: 	return "string";
+		case DbType.Binary: 				return "byte[]";
+		case DbType.Boolean: 				return "bool" + (column.AllowDBNull?"?":"");
+		case DbType.Byte: 					return "int" + (column.AllowDBNull?"?":"");		// change to "byte" when Gentle.net support bytes
+		case DbType.Currency: 				return "decimal" + (column.AllowDBNull?"?":"");
+		case DbType.Date: 					return "DateTime" + (column.AllowDBNull?"?":"");
+		case DbType.DateTime: 				return "DateTime" + (column.AllowDBNull?"?":"");
+		case DbType.Decimal: 				return "decimal" + (column.AllowDBNull?"?":"");
+		case DbType.Double: 				return "double" + (column.AllowDBNull?"?":"");
+		case DbType.Guid: 					return "Guid" + (column.AllowDBNull?"?":"");
+		case DbType.Int16: 					return "short" + (column.AllowDBNull?"?":"");
+		case DbType.Int32: 					return "int" + (column.AllowDBNull?"?":"");
+		case DbType.Int64: 					return "long" + (column.AllowDBNull?"?":"");
+		case DbType.Object: 				return "object";
+		case DbType.SByte: 					return "sbyte" + (column.AllowDBNull?"?":"");
+		case DbType.Single: 				return "float" + (column.AllowDBNull?"?":"");
+		case DbType.String: 				return "string";
+		case DbType.StringFixedLength: 		return "string";
+		case DbType.Time: 					return "TimeSpan" + (column.AllowDBNull?"?":"");
+		case DbType.UInt16: 				return "ushort" + (column.AllowDBNull?"?":"");
+		case DbType.UInt32: 				return "uint" + (column.AllowDBNull?"?":"");
+		case DbType.UInt64: 				return "ulong" + (column.AllowDBNull?"?":"");
+		case DbType.VarNumeric: 			return "decimal" + (column.AllowDBNull?"?":"");
+		default:
+		{
+			return "__UNKNOWN__" + column.NativeType;
+		}
+	}
+}
+
+public string GetClassName(TableSchema table)
+{
+	string name = table.Name;
+	if (name.EndsWith("s")) // this bit is probably only going to work for US/UK names
+	{
+		name = name.Substring(0, name.Length - 1);
+	}
+	return name;
+}
+
+</script>

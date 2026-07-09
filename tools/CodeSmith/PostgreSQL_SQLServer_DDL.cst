@@ -1,0 +1,96 @@
+﻿<%@ Template Language="C#" TargetLanguage="SQL" %>
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Data" %>
+
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Data" %>
+<%@ Import Namespace="System.Text" %>
+<%@ Import Namespace="System.Globalization" %>
+<%@ Import Namespace="System.Collections.Generic" %>
+<%@ Import Namespace="System.IO" %>
+<%@ Property Category="1.Database" Name="SourceDatabase" Optional="False"
+    Type="SchemaExplorer.DatabaseSchema" 
+    Description="Database to create SQLite DDL from." %>
+    
+<%@ Property Name="TableSpace" Type="String"  Category="OutConfig" Default="public" Description="biao。" %>
+<%@ Property Name="Owner" Type="String"  Category="OutConfig" Default="xunxin" Description="类的命名空间名称。" %>
+<%
+  int idx=0;
+%>
+<%foreach(TableSchema SourceTable in SourceDatabase.Tables) {
+    idx++;
+    
+    SourceTable.Refresh();
+%>
+-- <%=idx%>.创建<%=SourceTable.Description%>
+CREATE TABLE <%=GetCamel(SourceTable.Name)%>
+(
+<% 
+foreach (ColumnSchema column in SourceTable.Columns)
+{
+    column.GetLoadedExtendedProperties();
+%>
+    <%=GetCamel(column.Name)%> <%=GetPostgreSQLDataType(column)%><%=(!column.AllowDBNull?" NOT NULL":"")%>,
+<%}%>
+    CONSTRAINT [PK_<%=GetCamel(SourceTable.Name)%>] PRIMARY KEY CLUSTERED (<%=GetTalbeIds(SourceTable)%> ASC)
+)
+<% 
+foreach (ColumnSchema column in SourceTable.Columns)
+{
+    if(!string.IsNullOrEmpty(column.Description)) { %>
+COMMENT ON COLUMN <%=TableSpace%>.<%=SourceTable.Name.ToLower()%>.<%=column.Name.ToLower()%> IS '<%=column.Description%>';
+<%
+    } 
+}%>
+
+<%} %>
+<script runat="template">
+
+public string GetPostgreSQLDataType(ColumnSchema column)
+{
+	if(column.Name=="id"){
+        switch(column.NativeType){
+            case "bigint": return "bigint IDENTITY(1,1)";
+            case "integer": return "int IDENTITY(1,1)";
+        }
+    }
+	switch (column.NativeType)
+	{
+        case "integer":                                 return "int";
+        case "character varying":                       return "varchar(" + column.Size.ToString() + ")";
+        case "timestamp without time zone":             return "datetime";
+        case "date":                                    return "smalldatetime";
+        case "numeric":                                 return "numeric(" + column.Precision.ToString() + "," + column.Scale.ToString() + ")";
+        case "text":                                    return "ntext";
+        case "bigint":                                  return "bigint";
+        case "smallint":                                return "smallint";
+        case "decimal":                                 return "decimal";
+        case "boolean":                                 return "bit";
+		default:
+		{
+			return "__UNKNOWN__" + column.NativeType;
+		}
+	}
+}
+
+public string GetTalbeIds(TableSchema table){
+    var sb=new StringBuilder();
+    foreach(var column in table.Columns){
+          if(sb.Length>0){
+                break;
+            }
+            sb.Append(GetCamel(column.Name));
+    }
+    return sb.ToString();
+}
+
+public string GetCamel(string name){
+    string[] ss=name.Split(new char[] {'_'});
+    var sb=new StringBuilder();
+    foreach(string s in ss){
+        sb.Append((s.ToCharArray()[0]).ToString().ToUpper() + s.Substring(1));
+    }
+    return sb.ToString();
+}
+
+</script>

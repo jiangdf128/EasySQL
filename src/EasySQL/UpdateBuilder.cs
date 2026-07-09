@@ -1,0 +1,101 @@
+using System.Collections.Generic;
+using System.Text;
+
+namespace EasySQL
+{
+    /// <summary>
+    /// 批量修改数据的SQL语句构造器。
+    /// </summary>
+    public class UpdateBuilder
+    {
+        private const string UPDATE_SQL = "UPDATE {0} SET {1} WHERE {2}";
+        private SchemaBase Table { get; set; }
+        private IList<string> SetList { get; set; }
+        private StringBuilder _wherebuilder = null;
+
+        /// <summary>
+        /// 创建一个批量修改数据的SQL语句构造器。
+        /// </summary>
+        /// <param name="table">更新数据的目标表。</param>
+        public UpdateBuilder(SchemaBase table)
+        {
+            Table = table;
+            SetList = new List<string>();
+        }
+
+        /// <summary>
+        /// 更新字段设值函数。
+        /// </summary>
+        /// <param name="fieldName">字段名称。</param>
+        /// <param name="valueExpression">值表达式（可以是数据库参数变量名）。</param>
+        public UpdateBuilder Set(string fieldName, string valueExpression)
+        {
+            SetList.Add(string.Format("{0}={1}", this.Table.SQLDialect.QuoteField(fieldName), valueExpression));
+            return this;
+        }
+
+        /// <summary>
+        /// 更新字段设值函数。
+        /// </summary>
+        /// <param name="fieldName">字段名称。</param>
+        /// <param name="numericValue">整形常量。</param>
+        public UpdateBuilder Set(string fieldName, int numericValue)
+        {
+            this.Set(fieldName,numericValue.ToString());
+            return this;
+        }
+
+        /// <summary>
+        /// 更新字段设值函数。
+        /// </summary>
+        /// <param name="fieldName">字段名称。</param>
+        /// <param name="numericValue">长整形常量。</param>
+        public UpdateBuilder Set(string fieldName, long numericValue)
+        {
+            this.Set(fieldName, numericValue.ToString());
+            return this;
+        }
+
+
+        /// <summary>
+        /// 批量修改的条件子句。
+        /// </summary>
+        /// <param name="items">查询条件1，查询条件2......</param>
+        public UpdateBuilder Where(params string[] items)
+        {
+            QueryBuilder.BuildClause(ref _wherebuilder, " AND ", items);
+            return this;
+        }
+
+        /// <summary>
+        /// 批量修改的条件子句。
+        /// </summary>
+        /// <param name="format">条件子句占位符字符串。</param>
+        /// <param name="args"></param>
+        public UpdateBuilder WhereFormat(string format, params object[] args)
+        {
+            return this.Where(string.Format(format, args));
+        }
+
+        /// <summary>
+        /// 构造批量更新表数据的SQL语句。
+        /// </summary>
+        /// <returns>返回可用的SQL语句。</returns>
+        public string BuildSql()
+        {
+            //不允许不指定查询条件进行批量更新。
+            string where = _wherebuilder == null ? "1=2" : _wherebuilder.ToString();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < SetList.Count; i++)
+            {
+                if (i > 0)
+                {
+                    sb.Append(",");
+                }
+                sb.Append(SetList[i]);
+            }
+
+            return string.Format(UPDATE_SQL, this.Table.SQLDialect.QuoteTable(Table.IsPartialTableName ? Table.PartialTableName : Table.TableName), sb.ToString(), where);
+        }
+    }
+}

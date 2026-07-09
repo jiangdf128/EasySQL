@@ -1,0 +1,104 @@
+﻿<%@ Template Language="C#" TargetLanguage="SQL" %>
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Data" %>
+
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Data" %>
+<%@ Import Namespace="System.Text" %>
+<%@ Import Namespace="System.Globalization" %>
+<%@ Import Namespace="System.Collections.Generic" %>
+<%@ Import Namespace="System.IO" %>
+<%@ Property Category="1.Database" Name="SourceDatabase" Optional="False"
+    Type="SchemaExplorer.DatabaseSchema" 
+    Description="Database to create SQLite DDL from." %>
+    
+<%@ Property Name="TableSpace" Type="String"  Category="OutConfig" Default="public" Description="biao。" %>
+<%@ Property Name="Owner" Type="String"  Category="OutConfig" Default="xunxin" Description="类的命名空间名称。" %>
+<%
+  int idx=0;
+%>
+
+<%foreach(TableSchema SourceTable in SourceDatabase.Tables) {
+    idx++;
+%>
+
+-- <%=idx%>.创建<%=SourceTable.Description%>
+DROP TABLE IF EXISTS <%=TableSpace%>.<%=SourceTable.Name.ToLower()%>;
+
+CREATE TABLE <%=TableSpace%>.<%=SourceTable.Name.ToLower()%>
+(
+<% 
+foreach (ColumnSchema column in SourceTable.Columns)
+{%>
+    <%=column.Name.ToLower()%> <%=GetPostgreSQLDataType(column)%><%=(!column.AllowDBNull?" NOT NULL":"")%>,
+<%}%>
+    CONSTRAINT <%=SourceTable.Name.ToLower()%>_pkey PRIMARY KEY (<%=GetTalbeIds(SourceTable)%>)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE <%=TableSpace%>.<%=SourceTable.Name.ToLower()%>
+    OWNER to <%=Owner%>;
+    
+<% 
+foreach (ColumnSchema column in SourceTable.Columns)
+{
+    if(!string.IsNullOrEmpty(column.Description)) { %>
+COMMENT ON COLUMN <%=TableSpace%>.<%=SourceTable.Name.ToLower()%>.<%=column.Name.ToLower()%> IS '<%=column.Description%>';
+<%
+    } 
+}%>
+
+<%} %>
+
+<script runat="template">
+
+public string GetPostgreSQLDataType(ColumnSchema column)
+{
+	if(column.IsPrimaryKeyMember && ((bool)column.ExtendedProperties["CS_IsIdentity"].Value)){
+        switch(column.NativeType){
+            case "bigint": return "bigserial";
+            case "int": return "serial";
+        }
+    }
+	switch (column.NativeType)
+	{
+        case "int":                 return "integer";
+        case "varchar":             return "character varying(" + column.Size.ToString() + ")";
+        case "datetime":            return "timestamp(4) without time zone";
+        case "smalldatetime":       return "date";
+        case "nvarchar":            return "character varying(" + column.Size.ToString() + ")";
+        case "numeric":             return "numeric(" + column.Precision.ToString() + "," + column.Scale.ToString() + ")";
+        case "ntext":               return "text";
+        case "bigint":              return "bigint";
+        case "smallint":            return "smallint";
+        case "decimal":             return "decimal";
+        case "varbinary":           return "bytea(" + column.Size.ToString() + ")";
+        case "nchar":               return "character varying(" + column.Size.ToString() + ")";
+        case "char":                return "character varying(" + column.Size.ToString() + ")";
+        case "image":               return "bytea";
+        case "text":                return "text";
+        case "bit":                 return "boolean";
+		default:
+		{
+			return "__UNKNOWN__" + column.NativeType;
+		}
+	}
+}
+
+public string GetTalbeIds(TableSchema table){
+    var sb=new StringBuilder();
+    foreach(var column in table.Columns){
+        if(column.IsPrimaryKeyMember){
+            if(sb.Length>0){
+                sb.Append(",");
+            }
+            sb.Append(column.Name.ToLower());
+        }
+    }
+    return sb.ToString();
+}
+
+</script>
