@@ -1,28 +1,32 @@
 # EasySQL
 
-A lightweight, cross-database SQL query builder for .NET. Build complex, dialect-aware SQL queries with a fluent API.
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![NuGet](https://img.shields.io/badge/nuget-v1.0.0-blue)](https://www.nuget.org/packages/EasySQL)
 
-## Features
+EasySQL 是一个轻量级、跨数据库的 .NET SQL 查询构建器。通过流式 API 构建复杂的、方言感知的 SQL 查询语句。
 
-- **7 Database Dialects**: SQL Server, MySQL, PostgreSQL, Oracle, SQLite, MS Access (Jet), IBM DB2
-- **Fluent Query Builder**: Build `SELECT`, `INSERT`, `UPDATE`, `DELETE` statements with method chaining
-- **Join Support**: Inner, Left, Right, and Full Outer joins with multi-field conditions
-- **Pagination**: Built-in `LIMIT`/`OFFSET` support for all supported databases
-- **Union Queries**: Combine multiple query results with `UNION` / `UNION ALL`
-- **Sub-queries**: Nested queries with `EXISTS` / `NOT EXISTS` support
-- **SQL Functions**: Cross-database abstraction for common SQL functions (Date, String, Math)
-- **Auto Dialect Detection**: Automatically selects the correct SQL dialect based on the database connection
-- **Keyword Quoting**: Automatic quoting of reserved keywords for each database
+## ✨ 特性
 
-## Installation
+- **7 种数据库方言**：SQL Server、MySQL、PostgreSQL、Oracle、SQLite、MS Access（Jet）、IBM DB2
+- **流式查询构建器**：通过方法链式调用构建 `SELECT`、`INSERT`、`UPDATE`、`DELETE` 语句
+- **完整的连接支持**：内连接、左连接、右连接、全外连接，支持多字段连接条件
+- **分页支持**：所有数据库内置 `LIMIT`/`OFFSET` 支持
+- **Union 查询**：使用 `UNION` / `UNION ALL` 合并多个查询结果
+- **子查询**：支持 `EXISTS` / `NOT EXISTS` 嵌套查询
+- **跨数据库函数**：常见 SQL 函数（日期、字符串、数学）的跨数据库抽象
+- **自动方言检测**：根据数据库连接自动选择正确的 SQL 方言
+- **关键字引号处理**：各数据库保留字的自动转义处理
+
+## 📦 安装
 
 ```bash
 dotnet add package EasySQL
 ```
 
-## Quick Start
+## 🚀 快速开始
 
-### Define a Table Schema
+### 定义表结构
 
 ```csharp
 using EasySQL;
@@ -43,25 +47,26 @@ public class UserSchema : SchemaBase
     public string Name => NAME;
     public string Email => EMAIL;
 
+    // 获取带引号/前缀修饰的字段名
     public string GetId(bool needPrefix = true) => QuoteField(ID, needPrefix);
     public string GetName(bool needPrefix = true) => QuoteField(NAME, needPrefix);
     public string GetEmail(bool needPrefix = true) => QuoteField(EMAIL, needPrefix);
 }
 ```
 
-### Build Queries
+### 构建查询
 
 ```csharp
 var user = new UserSchema("u");
 var order = new OrderSchema("o");
 
-// Simple SELECT
+// 简单查询
 var qb = new QueryBuilder()
     .From(user)
     .Where(user.GetId() + " = @Id");
 string sql = qb.BuildSql();
 
-// SELECT with JOIN
+// 带 JOIN 的查询
 user.Select(user.GetName(), user.GetEmail());
 order.Select(order.GetAmount());
 
@@ -69,11 +74,11 @@ var qb2 = new QueryBuilder()
     .From(user)
     .Join(order, user.QuoteField("Id"), order.QuoteField("UserId"))
     .Where(user.GetId() + " > @MinId")
-    .OrderBy(user.GetName() + " ASC");
-string sql2 = qb2.BuildSql(rowLimit: 20, rowOffset: 0);
+    .OrderBy(user.GetName() + " ASC")
+    .BuildSql(rowLimit: 20, rowOffset: 0);
 ```
 
-### Configure Database Context
+### 配置数据库上下文
 
 ```csharp
 public class SqlServerProxy : DbProxyBase
@@ -86,23 +91,23 @@ public class SqlServerProxy : DbProxyBase
     }
 }
 
-// Initialize
+// 初始化
 DbContext.ConfigContext(new List<IDbProxy>
 {
     new SqlServerProxy().Config("main", "Server=.;Database=MyApp;...")
 });
 
-// Use
+// 使用
 DbContext.Do(conn =>
 {
-    // execute queries with Dapper or ADO.NET
+    // 配合 Dapper 或 ADO.NET 执行查询
 });
 ```
 
-## Supported Databases
+## 🗄️ 支持的数据库
 
-| Database | Dialect Class | Connection Type |
-|----------|--------------|-----------------|
+| 数据库 | 方言类 | 连接类型 |
+|--------|--------|----------|
 | SQL Server | `SqlServerDialect` | `SqlConnection` |
 | MySQL | `MySQLDialect` | `MySqlConnection` |
 | PostgreSQL | `PostgreSQLDialect` | `NpgsqlConnection` |
@@ -111,47 +116,51 @@ DbContext.Do(conn =>
 | MS Access | `JetDialect` | `OleDbConnection` |
 | IBM DB2 | `DB2Dialect` | `DB2Connection` |
 
-## SQL Builder Reference
+## 📖 SQL 构建器参考
 
-### QueryBuilder
+### QueryBuilder（查询构建器）
 
 ```csharp
-var qb = new QueryBuilder("alias", dialect)
-    .From(schema1, schema2)
-    .Where("condition1", "condition2")
-    .GroupBy("column1", "column2")
-    .Having("condition")
-    .OrderBy("column1 ASC", "column2 DESC");
+var qb = new QueryBuilder("别名", dialect)
+    .From(schema1, schema2)          // FROM 子句
+    .Where("条件1", "条件2")          // WHERE 条件
+    .GroupBy("列1", "列2")            // GROUP BY 分组
+    .Having("条件")                   // HAVING 过滤
+    .OrderBy("列1 ASC", "列2 DESC");  // ORDER BY 排序
 
-// Pagination
+// 分页查询
 string sql = qb.BuildSql(rowLimit: 20, rowOffset: 0);
 
-// Count query
+// Count 计数查询
 string countSql = qb.BuildCountSql();
 
-// UNION
+// Union 合并查询
 qb.Union(otherQuery, isUnionAll: true);
+
+// Exists 子查询
+qb.Exists(subQuery);
+qb.NotExists(subQuery);
 ```
 
-### InsertBuilder
+### InsertBuilder（插入构建器）
 
 ```csharp
 var insert = new InsertBuilder(table)
-    .Insert("Column1", "Column2")
+    .Insert("列1", "列2")
     .BuildSql(fromQuery);
 ```
 
-### UpdateBuilder
+### UpdateBuilder（更新构建器）
 
 ```csharp
 var update = new UpdateBuilder(table)
-    .Set("Column1", "@Value1")
-    .Set("Column2", 123)
+    .Set("列1", "@Value1")
+    .Set("列2", 123)
     .Where("Id = @Id")
     .BuildSql();
 ```
 
-### DeleteBuilder
+### DeleteBuilder（删除构建器）
 
 ```csharp
 var delete = new DeleteBuilder(table)
@@ -159,6 +168,10 @@ var delete = new DeleteBuilder(table)
     .BuildSql();
 ```
 
-## License
+## 📄 许可证
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+本项目基于 [MIT License](LICENSE) 开源协议发布。
+
+## 🙏 致谢
+
+本项目的思路源于多年的企业级应用开发实践，特别感谢 [Dapper](https://github.com/DapperLib/Dapper) 项目带来的灵感。

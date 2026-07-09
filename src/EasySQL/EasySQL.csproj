@@ -10,8 +10,8 @@
     <PackageId>EasySQL</PackageId>
     <Version>1.0.0</Version>
     <Authors>Caror Jiang</Authors>
-    <Description>A lightweight, cross-database SQL query builder for .NET. Supports SQL Server, MySQL, PostgreSQL, Oracle, SQLite, MS Access, and DB2 with a fluent API for building complex queries including joins, unions, pagination, and dialect-aware SQL generation.</Description>
-    <PackageTags>sql;query-builder;orm;sql-server;mysql;postgresql;oracle;sqlite;database;cross-platform</PackageTags>
+    <Description>一个轻量级、跨数据库的 .NET SQL 查询构建器。支持 SQL Server、MySQL、PostgreSQL、Oracle、SQLite、MS Access（Jet）、IBM DB2，提供流式 API 构建包括连接、合并、分页在内的复杂 SQL 查询，并自动适配各数据库方言。</Description>
+    <PackageTags>sql;query-builder;orm;sql-server;mysql;postgresql;oracle;sqlite;database;cross-platform;中文</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/caror/EasySQL</PackageProjectUrl>
     <RepositoryUrl>https://github.com/caror/EasySQL</RepositoryUrl>
