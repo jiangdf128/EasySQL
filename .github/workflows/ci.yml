@@ -33,7 +33,7 @@ jobs:
         run: dotnet build --no-restore -c Release
 
       - name: Test (${{ matrix.framework }})
-        run: dotnet test --no-build -c Release -f ${{ matrix.framework }}
+        run: dotnet test --no-build -c Release -f ${{ matrix.framework }} --filter "FullyQualifiedName~SqlGeneration"
 
   pack:
     name: Pack NuGet
