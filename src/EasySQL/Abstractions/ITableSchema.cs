@@ -26,7 +26,7 @@ namespace EasySQL
         /// <summary>
         /// 使用的SQL方言。
         /// </summary>
-        ISQLDialect SQLDialect { get; set; }
+        ISQLDialect? SQLDialect { get; set; }
 
         /// <summary>
         /// 获取或设置拆表的名称，如果设置为null则认为是默认表名称。

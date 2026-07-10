@@ -4,9 +4,9 @@ using System.Text;
 
 namespace EasySQL
 {
-    public static class EasySQLExtension
+    public static class EasySQLExtensions
     {
-        public static QueryBuilder Query(this SchemaBase[] tables, string alias = null, ISQLDialect dialect = null)
+        public static QueryBuilder Query(this SchemaBase[] tables, string? alias = null, ISQLDialect? dialect = null)
         {
             var qb = new QueryBuilder(alias, dialect);
             qb.From(tables);

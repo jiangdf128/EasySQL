@@ -90,7 +90,7 @@ namespace EasySQL
         /// <summary>
         /// 使用的SQL方言。
         /// </summary>
-        public virtual ISQLDialect SQLDialect { get; set; }
+        public virtual ISQLDialect? SQLDialect { get; set; }
 
         #endregion
 
@@ -269,7 +269,7 @@ namespace EasySQL
         /// </summary>
         /// <param name="alias">表（或视图）的别名。</param>
         /// <param name="dialect">数据方言。</param>
-        public SchemaBase(string alias, ISQLDialect dialect)
+        public SchemaBase(string alias, ISQLDialect? dialect)
         {
             this.SelectFields = new List<string>();
             this.Joins = new List<JoinCondition>();
@@ -449,7 +449,7 @@ namespace EasySQL
         /// </summary>
         /// <param name="expression">表达式。</param>
         /// <param name="aliasName">结果列的别名。</param>
-        public SchemaBase SelectExpression2(string expression,string aliasName)
+        public SchemaBase SelectExpressionAlias(string expression,string aliasName)
         {
             this.SelectFields.Add(string.Format("{0} AS {1}", expression, this.SQLDialect.QuoteField(aliasName)));
             return this;

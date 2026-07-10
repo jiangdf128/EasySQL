@@ -58,7 +58,7 @@ namespace EasySQL
         /// </summary>
         /// <param name="alias">作为子查询的别名参数。</param>
         /// <param name="dialect">SQL方言。</param>
-        public QueryBuilder(string alias,ISQLDialect dialect)
+        public QueryBuilder(string alias, ISQLDialect? dialect)
             : base(alias, dialect)
         {
             this.FromItems = new List<SchemaBase>();
