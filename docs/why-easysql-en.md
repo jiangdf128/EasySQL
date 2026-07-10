@@ -149,7 +149,7 @@ qb.Where($"{sa.GetId()} = {sa.AsParam("Id")}").AddParameter("Id", 123);
 ## Quick Start
 
 ```bash
-dotnet add package EasySQL
+dotnet add package EasySQL.SqlBuilder
 ```
 
 ```csharp
@@ -169,7 +169,7 @@ var users = conn.Query<User>(sql);
 ## Open Source & Roadmap
 
 - GitHub: [github.com/jiangdf128/EasySQL](https://github.com/jiangdf128/EasySQL)
-- NuGet: [EasySQL](https://www.nuget.org/packages/EasySQL)
+- NuGet: [EasySQL](https://www.nuget.org/packages/EasySQL.SqlBuilder)
 - License: MIT
 
 Planned features:
