@@ -525,6 +525,143 @@ namespace EasySQL.Test
         }
 
         // ================================================================
+        // BuildIntoSql 测试（SELECT INTO / CREATE TABLE AS SELECT）
+        // ================================================================
+        [Fact]
+        public void BuildIntoSql_SqlServer_ShouldUseSelectInto()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.Select(s.GetName(), s.GetEmail());
+
+            var qb = new QueryBuilder().From(s)
+                .Where($"{s.GetStatus()} = 1");
+
+            var tmp = new TempTableDef("#tmp_users", "Name", "Email");
+            string sql = new SqlServerDialect().BuildIntoSql(qb, tmp.TableName, isTemp: true);
+            LogSql(sql, "SQL Server SELECT INTO");
+            Assert.Contains("SELECT ", sql);
+            Assert.Contains("INTO #tmp_users", sql);
+            Assert.Contains("FROM Users u", sql);
+        }
+
+        [Fact]
+        public void BuildIntoSql_MySQL_ShouldUseCreateTableAsSelect()
+        {
+            SQLDialectFactory.UseDialect("mysqlconnection");
+            var s = new TestUserTableDef("u");
+            s.Select(s.GetName());
+
+            var qb = new QueryBuilder().From(s);
+            var tmp = new TempTableDef("tmp_users", "Name");
+            string sql = new MySQLDialect().BuildIntoSql(qb, tmp.TableName, isTemp: true);
+            LogSql(sql, "MySQL CREATE TEMPORARY TABLE AS SELECT");
+            Assert.StartsWith("CREATE TEMPORARY TABLE", sql);
+            Assert.Contains("AS SELECT", sql);
+        }
+
+        [Fact]
+        public void BuildIntoSql_PostgreSQL_ShouldUseCreateTableAsSelect()
+        {
+            SQLDialectFactory.UseDialect("npgsqlconnection");
+            var s = new TestUserTableDef("u");
+            s.Select(s.GetName());
+
+            var qb = new QueryBuilder().From(s);
+            var tmp = new TempTableDef("tmp_users", "Name");
+            string sql = new PostgreSQLDialect().BuildIntoSql(qb, tmp.TableName, isTemp: true);
+            LogSql(sql, "PostgreSQL CREATE TEMP TABLE AS SELECT");
+            Assert.StartsWith("CREATE TEMPORARY TABLE", sql);
+            Assert.Contains("AS SELECT", sql);
+        }
+
+        [Fact]
+        public void BuildIntoSql_Oracle_ShouldUseGlobalTemporary()
+        {
+            SQLDialectFactory.UseDialect("oracleconnection");
+            var s = new TestUserTableDef("u");
+            s.Select(s.GetName());
+
+            var qb = new QueryBuilder().From(s);
+            var tmp = new TempTableDef("tmp_users", "Name");
+            string sql = new OracleDialect().BuildIntoSql(qb, tmp.TableName, isTemp: true);
+            LogSql(sql, "Oracle CREATE GLOBAL TEMPORARY TABLE AS SELECT");
+            Assert.StartsWith("CREATE GLOBAL TEMPORARY TABLE", sql);
+        }
+
+        [Fact]
+        public void BuildIntoSql_DB2_ShouldUseWithData()
+        {
+            SQLDialectFactory.UseDialect("db2connection");
+            var s = new TestUserTableDef("u");
+            s.Select(s.GetName());
+
+            var qb = new QueryBuilder().From(s);
+            var tmp = new TempTableDef("tmp_users", "Name");
+            string sql = new DB2Dialect().BuildIntoSql(qb, tmp.TableName, isTemp: true);
+            LogSql(sql, "DB2 CREATE GLOBAL TEMPORARY TABLE AS SELECT WITH DATA");
+            Assert.StartsWith("CREATE GLOBAL TEMPORARY TABLE", sql);
+            Assert.Contains("WITH DATA", sql);
+        }
+
+        // ================================================================
+        // TempTableDef 测试
+        // ================================================================
+        [Fact]
+        public void TempTableDef_Indexer_ShouldReturnPrefixedField()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var tmp = new TempTableDef("t", "Id", "Name") { Alias = "t" };
+            // 带别名时返回带前缀的字段名（与 GetXxx() 行为一致）
+            Assert.Equal("t.Id", tmp["Id"]);
+            Assert.Equal("t.Name", tmp["Name"]);
+        }
+
+        [Fact]
+        public void TempTableDef_NoAlias_ShouldReturnPlainField()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var tmp = new TempTableDef("#temp", "Id", "Name");
+            Assert.Equal("Id", tmp["Id"]);
+        }
+
+        [Fact]
+        public void TempTableDef_CanJoinAndQuery()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var sa = new TestUserTableDef("SA");
+            var tmp = new TempTableDef("#t", "Id", "Name") { Alias = "t" };
+
+            sa.Select(sa.GetName());
+            // tmp["Name"] 返回带前缀的 "t.Name"，用 Select(field) 即可（同 GetXxx 用法）
+            tmp.Select(tmp["Name"]);
+            sa.Join(tmp, $"{sa.GetId()} = {tmp["Id"]}");
+
+            var qb = new QueryBuilder().From(sa, tmp);
+            string sql = qb.BuildSql();
+            LogSql(sql, "TempTableDef JOIN");
+            Assert.Contains("INNER JOIN #t t on SA.Id = t.Id", sql);
+            Assert.Contains("SA.Name", sql);
+            Assert.Contains("t.Name", sql);
+        }
+
+        [Fact]
+        public void TempTableDef_InsertBuilderBuildIntoSql_ShouldWork()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.Select(s.GetName(), s.GetEmail());
+
+            var qb = new QueryBuilder().From(s)
+                .Where($"{s.GetStatus()} = 1");
+
+            var tmp = new TempTableDef("#tmp", "Name", "Email");
+            string sql = new InsertBuilder(tmp).BuildIntoSql(fromQuery: qb);
+            LogSql(sql, "InsertBuilder.BuildIntoSql");
+            Assert.Contains("INTO #tmp", sql);
+        }
+
+        // ================================================================
         // DialectType 枚举测试
         // ================================================================
         [Fact]

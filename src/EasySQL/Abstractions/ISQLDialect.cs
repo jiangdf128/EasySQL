@@ -70,5 +70,15 @@ namespace EasySQL
         /// <param name="forCount">是否为计数构造。</param>
         /// <returns></returns>
         string BuildSql(QueryBuilder qb, int rowLimit, int rowOffset, bool forCount);
+
+        /// <summary>
+        /// 构造 SELECT ... INTO / CREATE TABLE ... AS SELECT 语句，
+        /// 从查询结果创建新表（包括临时表）。各方言自动选择正确的语法。
+        /// </summary>
+        /// <param name="qb">查询构建器。</param>
+        /// <param name="targetTable">目标表名。</param>
+        /// <param name="isTemp">是否为临时表。</param>
+        /// <returns>完整 SQL 语句。</returns>
+        string BuildIntoSql(QueryBuilder qb, string targetTable, bool isTemp);
     }
 }

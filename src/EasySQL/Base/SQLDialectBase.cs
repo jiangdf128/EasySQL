@@ -265,5 +265,21 @@ namespace EasySQL
             }
             return sql.ToString();
         }
+
+        /// <summary>
+        /// 构造 SELECT ... INTO / CREATE TABLE ... AS SELECT 语句。
+        /// 默认使用 CREATE TABLE AS SELECT 语法（MySQL、PostgreSQL、SQLite、Oracle）。
+        /// SQL Server 覆写为 SELECT ... INTO 语法。
+        /// </summary>
+        /// <param name="qb">查询构建器。</param>
+        /// <param name="targetTable">目标表名。</param>
+        /// <param name="isTemp">是否为临时表。</param>
+        /// <returns>完整 SQL 语句。</returns>
+        public virtual string BuildIntoSql(QueryBuilder qb, string targetTable, bool isTemp)
+        {
+            string selectSql = qb.BuildSql();
+            string tempKeyword = isTemp ? "TEMPORARY " : "";
+            return $"CREATE {tempKeyword}TABLE {QuoteTable(targetTable)} AS {selectSql}";
+        }
     }
 }

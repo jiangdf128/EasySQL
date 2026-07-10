@@ -38,6 +38,18 @@ namespace EasySQL
             return sql.ToString();
         }
 
+        /// <inheritdoc/>
+        public override string BuildIntoSql(QueryBuilder qb, string targetTable, bool isTemp)
+        {
+            // SQL Server: SELECT ... INTO targetTable FROM ...
+            string selectSql = qb.BuildSql();
+            // 在 SELECT 列和 FROM 之间注入 INTO targetTable
+            int fromIdx = selectSql.IndexOf("\nFROM ");
+            if (fromIdx < 0) fromIdx = selectSql.IndexOf(" FROM ");
+            if (fromIdx < 0) fromIdx = selectSql.IndexOf("\r\nFROM ");
+            return selectSql.Insert(fromIdx, $" INTO {QuoteTable(targetTable)}");
+        }
+
         protected override string QuoteKeyWord(string word)
         {
             return $"[{word}]";

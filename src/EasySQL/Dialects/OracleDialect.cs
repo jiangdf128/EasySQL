@@ -36,5 +36,13 @@ namespace EasySQL
                 readable ? System.Environment.NewLine : " ", rowOffset, rowLimit));
             return sql.ToString();
         }
+
+        /// <inheritdoc/>
+        public override string BuildIntoSql(QueryBuilder qb, string targetTable, bool isTemp)
+        {
+            string selectSql = qb.BuildSql();
+            string tempKeyword = isTemp ? "GLOBAL TEMPORARY " : "";
+            return $"CREATE {tempKeyword}TABLE {QuoteTable(targetTable)} AS {selectSql}";
+        }
     }
 }

@@ -86,5 +86,28 @@ namespace EasySQL
             }
             return string.Format(INSERT_SQL, this.Table.SQLDialect!.QuoteTable(Table.IsPartialTableName ? Table.PartialTableName : Table.TableName), sb.ToString(), fromQuery);
         }
+
+        /// <summary>
+        /// 构造 SELECT ... INTO / CREATE TABLE ... AS SELECT 语句，从查询结果创建新表。
+        /// 各方言自动选择正确的语法（SQL Server → SELECT INTO, MySQL/PG → CREATE TABLE AS SELECT）。
+        /// </summary>
+        /// <example>
+        /// <code>
+        /// // 创建临时表
+        /// var tmp = new TempTableDef("#tmp_orders", "Id", "Name");
+        /// var qb = new QueryBuilder().From(sa).Where(...);
+        /// string sql = new InsertBuilder(tmp).BuildIntoSql(fromQuery: qb);
+        /// // SQL Server: SELECT sa.Id, sa.Name INTO #tmp_orders FROM ...
+        /// // PostgreSQL: CREATE TEMP TABLE tmp_orders AS SELECT ...
+        /// </code>
+        /// </example>
+        /// <param name="fromQuery">数据来源查询构建器。</param>
+        /// <param name="isTemp">是否为临时表，默认 false。</param>
+        /// <returns>完整 SQL 语句。</returns>
+        public string BuildIntoSql(QueryBuilder fromQuery, bool isTemp = false)
+        {
+            string targetTable = Table.IsPartialTableName ? Table.PartialTableName! : Table.TableName;
+            return this.Table.SQLDialect!.BuildIntoSql(fromQuery, targetTable, isTemp);
+        }
     }
 }
