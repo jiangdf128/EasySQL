@@ -1,22 +1,22 @@
 # EasySQL
 
-[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-8.0_|_9.0_|_10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![NuGet](https://img.shields.io/badge/nuget-v1.0.0-blue)](https://www.nuget.org/packages/EasySQL)
 
-EasySQL 是一个轻量级、跨数据库的 .NET SQL 查询构建器。通过流式 API 构建复杂的、方言感知的 SQL 查询语句。
+EasySQL 是一个轻量级、跨数据库的 .NET SQL 查询构建器。**只生成 SQL，不执行 SQL**——通过流式 API 生成方言感知的 SQL 字符串和参数，交给 Dapper 或 ADO.NET 执行。
 
 ## ✨ 特性
 
-- **7 种数据库方言**：SQL Server、MySQL、PostgreSQL、Oracle、SQLite、MS Access（Jet）、IBM DB2
-- **流式查询构建器**：通过方法链式调用构建 `SELECT`、`INSERT`、`UPDATE`、`DELETE` 语句
-- **完整的连接支持**：内连接、左连接、右连接、全外连接，支持多字段连接条件
-- **分页支持**：所有数据库内置 `LIMIT`/`OFFSET` 支持
-- **Union 查询**：使用 `UNION` / `UNION ALL` 合并多个查询结果
-- **子查询**：支持 `EXISTS` / `NOT EXISTS` 嵌套查询
-- **跨数据库函数**：常见 SQL 函数（日期、字符串、数学）的跨数据库抽象
-- **自动方言检测**：根据数据库连接自动选择正确的 SQL 方言
-- **关键字引号处理**：各数据库保留字的自动转义处理
+- **6 种数据库方言**：SQL Server、MySQL、PostgreSQL、Oracle、SQLite、IBM DB2
+- **流式查询构建器**：方法链式调用构建 `SELECT`、`INSERT`、`UPDATE`、`DELETE`
+- **完整的 JOIN 支持**：INNER / LEFT / RIGHT / FULL OUTER JOIN
+- **分页 + 总数一次查询**：`BuildSql(rowLimit, rowOffset)` 自动注入 `COUNT(*) OVER() AS TotalRows`
+- **Union 查询**：`UNION` / `UNION ALL` 合并多个查询
+- **子查询**：`EXISTS` / `NOT EXISTS` 嵌套查询
+- **参数化查询**：`AsParam()` + `AddParameter()` 防 SQL 注入
+- **自动方言检测**：连接数据库时自动对齐 SQL 方言
+- **关键字转义**：各数据库保留字自动加引号
 
 ## 📦 安装
 
@@ -26,28 +26,29 @@ dotnet add package EasySQL
 
 ## 🚀 快速开始
 
-### 定义表结构
+### 定义 Schema
 
 ```csharp
 using EasySQL;
 
 public class UserSchema : SchemaBase
 {
-    public const string USERS = "Users";
+    public const string TABLE = "Users";
     public const string ID = "Id";
     public const string NAME = "Name";
     public const string EMAIL = "Email";
 
-    public override string TableName => USERS;
+    public override string TableName => TABLE;
 
-    public UserSchema(string alias = null, ISQLDialect dialect = null)
-        : base(alias, dialect) { }
+    public UserSchema(string alias, ISQLDialect? dialect = null) : base(alias, dialect) { }
+    public UserSchema() : this(string.Empty, null) { }
 
+    // 实例属性 — 返回原始字段名（用于 Select 多字段选取）
     public string Id => ID;
     public string Name => NAME;
     public string Email => EMAIL;
 
-    // 获取带引号/前缀修饰的字段名
+    // GetXxx 方法 — 返回带引号/前缀修饰的字段名
     public string GetId(bool needPrefix = true) => QuoteField(ID, needPrefix);
     public string GetName(bool needPrefix = true) => QuoteField(NAME, needPrefix);
     public string GetEmail(bool needPrefix = true) => QuoteField(EMAIL, needPrefix);
@@ -60,25 +61,67 @@ public class UserSchema : SchemaBase
 var user = new UserSchema("u");
 var order = new OrderSchema("o");
 
-// 简单查询
+// 多字段选取（标准写法）
+user.Select(true, user.Name, user.Email);
+order.Select(true, order.Amount);
+
+// JOIN + WHERE + ORDER BY
+user.Join(order, $"{user.GetId(true)} = {order.GetUserId(true)}");
+
 var qb = new QueryBuilder()
-    .From(user)
-    .Where(user.GetId() + " = @Id");
-string sql = qb.BuildSql();
+    .From(user, order)
+    .Where($"{user.GetId()} = {user.AsParam("Id")}")
+    .AddParameter("Id", 123)
+    .OrderBy($"{user.GetName()} ASC");
 
-// 带 JOIN 的查询
-user.Select(user.GetName(), user.GetEmail());
-order.Select(order.GetAmount());
+// 分页查询（一次查询，数据 + 总记录数）
+string sql = qb.BuildSql(rowLimit: 20, rowOffset: 0);
+// SELECT u.Name,u.Email,o.Amount,COUNT(*) OVER() AS TotalRows
+// FROM Users u INNER JOIN Orders o on u.Id = o.UserId
+// WHERE (u.Id = @Id)
+// ORDER BY u.Name ASC
+// OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY
 
-var qb2 = new QueryBuilder()
-    .From(user)
-    .Join(order, user.QuoteField("Id"), order.QuoteField("UserId"))
-    .Where(user.GetId() + " > @MinId")
-    .OrderBy(user.GetName() + " ASC")
-    .BuildSql(rowLimit: 20, rowOffset: 0);
+// 配合 Dapper 执行
+var users = conn.Query<User>(sql, qb.Parameters.ToDynamicParameters());
+int total = users.First().TotalRows;
 ```
 
 ### 配置数据库上下文
+
+```csharp
+// 非 DI 场景
+EasySQLContext.Default.Configure(new EasySQLOptions
+{
+    Proxies = { new SqlServerProxy().Config("main", connectionString) }
+});
+
+EasySQLContext.Default.Do(conn =>
+{
+    // 使用 Dapper 或 ADO.NET 执行查询
+});
+
+// DI 场景（Program.cs）
+builder.Services.AddEasySQL(options =>
+    options.AddDatabase(new SqlServerProxy().Config("main", connectionString)));
+
+// Service 中注入
+public class UserService(IEasySQLContext db)
+{
+    public async Task<IEnumerable<User>> GetUsersAsync()
+    {
+        return await db.DoAsync(async conn =>
+        {
+            var u = new UserSchema("u");
+            u.Select(true, u.Name, u.Email);
+            var qb = new QueryBuilder().From(u);
+            return await conn.QueryAsync<User>(qb.BuildSql());
+        });
+    }
+}
+```
+
+### 定义数据库代理
 
 ```csharp
 public class SqlServerProxy : DbProxyBase
@@ -90,88 +133,78 @@ public class SqlServerProxy : DbProxyBase
         return conn;
     }
 }
-
-// 初始化
-DbContext.ConfigContext(new List<IDbProxy>
-{
-    new SqlServerProxy().Config("main", "Server=.;Database=MyApp;...")
-});
-
-// 使用
-DbContext.Do(conn =>
-{
-    // 配合 Dapper 或 ADO.NET 执行查询
-});
 ```
 
 ## 🗄️ 支持的数据库
 
-| 数据库 | 方言类 | 连接类型 |
-|--------|--------|----------|
-| SQL Server | `SqlServerDialect` | `SqlConnection` |
-| MySQL | `MySQLDialect` | `MySqlConnection` |
-| PostgreSQL | `PostgreSQLDialect` | `NpgsqlConnection` |
-| Oracle | `OracleDialect` | `OracleConnection` |
-| SQLite | `SQLiteDialect` | `SQLiteConnection` |
-| MS Access | `JetDialect` | `OleDbConnection` |
-| IBM DB2 | `DB2Dialect` | `DB2Connection` |
+| 数据库 | 方言类 | 参数前缀 | 分页语法 |
+|--------|--------|---------|---------|
+| SQL Server | `SqlServerDialect` | `@` | `OFFSET/FETCH` |
+| MySQL | `MySQLDialect` | `@` | `LIMIT/OFFSET` |
+| PostgreSQL | `PostgreSQLDialect` | `@` | `LIMIT/OFFSET` |
+| Oracle | `OracleDialect` | `:` | `OFFSET/FETCH` |
+| SQLite | `SQLiteDialect` | `@` | `LIMIT/OFFSET` |
+| IBM DB2 | `DB2Dialect` | `@` | `OFFSET/FETCH` |
 
 ## 📖 SQL 构建器参考
 
-### QueryBuilder（查询构建器）
+### QueryBuilder
 
 ```csharp
-var qb = new QueryBuilder("别名", dialect)
+var qb = new QueryBuilder()
     .From(schema1, schema2)          // FROM 子句
-    .Where("条件1", "条件2")          // WHERE 条件
+    .Where("条件1", "条件2")          // WHERE 条件（AND 连接）
     .GroupBy("列1", "列2")            // GROUP BY 分组
     .Having("条件")                   // HAVING 过滤
     .OrderBy("列1 ASC", "列2 DESC");  // ORDER BY 排序
 
-// 分页查询
+// 分页查询（自动注入 COUNT(*) OVER() AS TotalRows）
 string sql = qb.BuildSql(rowLimit: 20, rowOffset: 0);
 
-// Count 计数查询
+// 计数查询
 string countSql = qb.BuildCountSql();
 
-// Union 合并查询
+// Union 合并
 qb.Union(otherQuery, isUnionAll: true);
 
-// Exists 子查询
+// 子查询
 qb.Exists(subQuery);
 qb.NotExists(subQuery);
 ```
 
-### InsertBuilder（插入构建器）
+### InsertBuilder
 
 ```csharp
 var insert = new InsertBuilder(table)
-    .Insert("列1", "列2")
-    .BuildSql(fromQuery);
+    .Insert(table.Name, table.Email)
+    .BuildSql(fromQuery);  // INSERT INTO ... SELECT ...
 ```
 
-### UpdateBuilder（更新构建器）
+### UpdateBuilder
 
 ```csharp
 var update = new UpdateBuilder(table)
-    .Set("列1", "@Value1")
-    .Set("列2", 123)
-    .Where("Id = @Id")
-    .BuildSql();
+    .Set(table.GetName(), table.AsParam("Name"))
+    .Set(table.GetStatus(), 1)
+    .Where($"{table.GetId()} = {table.AsParam("Id")}")
+    .AddParameter("Name", "张三")
+    .AddParameter("Id", 123);
+string sql = update.BuildSql();  // 无 WHERE 时抛异常，防全表误更新
 ```
 
-### DeleteBuilder（删除构建器）
+### DeleteBuilder
 
 ```csharp
 var delete = new DeleteBuilder(table)
-    .Where("Id = @Id")
-    .BuildSql();
+    .Where($"{table.GetId()} = {table.AsParam("Id")}")
+    .AddParameter("Id", 123);
+string sql = delete.BuildSql();  // 无 WHERE 时抛异常，防全表误删除
 ```
 
 ## 📄 许可证
 
-本项目基于 [MIT License](LICENSE) 开源协议发布。
+MIT License — 详见 [LICENSE](LICENSE)。
 
 ## 🙏 致谢
 
-本项目的思路源于多年的企业级应用开发实践，特别感谢 [Dapper](https://github.com/DapperLib/Dapper) 项目带来的灵感。
+灵感来源于 [Dapper](https://github.com/DapperLib/Dapper) 项目及多年企业级应用开发实践。
