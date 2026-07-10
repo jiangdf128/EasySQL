@@ -2,7 +2,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-8.0_|_9.0_|_10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![NuGet](https://img.shields.io/badge/nuget-v1.0.0-blue)](https://www.nuget.org/packages/EasySQL)
+[![NuGet](https://img.shields.io/badge/nuget-v1.0.0-blue)](https://www.nuget.org/packages/EasySQL.SqlBuilder)
 
 EasySQL 是一个轻量级、跨数据库的 .NET SQL 查询构建器。**只生成 SQL，不执行 SQL**——通过流式 API 生成方言感知的 SQL 字符串和参数，交给 Dapper 或 ADO.NET 执行。
 
@@ -21,7 +21,7 @@ EasySQL 是一个轻量级、跨数据库的 .NET SQL 查询构建器。**只生
 ## 📦 安装
 
 ```bash
-dotnet add package EasySQL
+dotnet add package EasySQL.SqlBuilder
 ```
 
 ## 🚀 快速开始
