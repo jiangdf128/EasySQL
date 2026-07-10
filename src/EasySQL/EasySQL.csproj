@@ -5,19 +5,26 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>EasySQL</RootNamespace>
-
     <!-- NuGet Package Metadata -->
     <PackageId>EasySQL</PackageId>
     <Version>1.0.0</Version>
-    <Authors>Caror Jiang</Authors>
-    <Description>一个轻量级、跨数据库的 .NET SQL 查询构建器。支持 SQL Server、MySQL、PostgreSQL、Oracle、SQLite、MS Access（Jet）、IBM DB2，提供流式 API 构建包括连接、合并、分页在内的复杂 SQL 查询，并自动适配各数据库方言。</Description>
-    <PackageTags>sql;query-builder;orm;sql-server;mysql;postgresql;oracle;sqlite;database;cross-platform;中文</PackageTags>
+    <Authors>jiangdefu</Authors>
+    <Description>
+      A lightweight, cross-database .NET SQL query builder. Build dialect-aware SQL (SELECT/INSERT/UPDATE/DELETE) with a fluent, type-safe API — no magic, just strings you can hand to Dapper or ADO.NET.
+      Supports SQL Server, MySQL, PostgreSQL, Oracle, SQLite, and IBM DB2.
+    </Description>
+    <PackageTags>sql;query-builder;sql-server;mysql;postgresql;oracle;sqlite;db2;dapper;cross-database;fluent-api;type-safe</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/caror/EasySQL</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/caror/EasySQL</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/jiangdf128/EasySQL</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jiangdf128/EasySQL.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
