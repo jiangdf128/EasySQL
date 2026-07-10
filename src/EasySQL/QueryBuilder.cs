@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -8,6 +9,7 @@ namespace EasySQL
     /// </summary>
     public class QueryBuilder:SchemaBase
     {
+        private readonly object _lock = new object();
         private List<KeyValuePair<QueryBuilder,bool>>  _unionList;
         private List<QueryBuilder> _existsList=null;
         private List<QueryBuilder> _notExistsList=null;
@@ -19,6 +21,12 @@ namespace EasySQL
 
         //在做嵌套SQL的计数查询的时候，去掉Order排序。
         private bool _isSubCount=false;
+
+        /// <summary>
+        /// 参数化查询的参数集合，用于收集 WHERE 条件中的参数名与值。
+        /// 调用 BuildSql() 后可通过此属性获取所有已注册的参数。
+        /// </summary>
+        public Dictionary<string, object> Parameters { get; } = new Dictionary<string, object>();
 
         internal List<KeyValuePair<QueryBuilder, bool>> UnionList => _unionList;
         internal List<QueryBuilder> ExistsList => _existsList;
@@ -109,6 +117,41 @@ namespace EasySQL
         public QueryBuilder WhereFormat(string format, params object[] args)
         {
             return this.Where(string.Format(format, args));
+        }
+
+        /// <summary>
+        /// 注册一个参数化查询参数，用于防止 SQL 注入。
+        /// 在条件中使用 @参数名 引用，如 Where("Id = @UserId")，然后调用 AddParameter("UserId", 123)。
+        /// </summary>
+        /// <param name="name">参数名称（不含 @ 前缀）。</param>
+        /// <param name="value">参数值。</param>
+        public QueryBuilder AddParameter(string name, object value)
+        {
+            Parameters[name] = value;
+            return this;
+        }
+
+        /// <summary>
+        /// 注册多个参数化查询参数。
+        /// </summary>
+        /// <param name="parameters">以参数名（不含 @ 前缀）为键的参数字典。</param>
+        public QueryBuilder AddParameters(IDictionary<string, object> parameters)
+        {
+            if (parameters != null)
+            {
+                foreach (var kv in parameters)
+                    Parameters[kv.Key] = kv.Value;
+            }
+            return this;
+        }
+
+        /// <summary>
+        /// 清除所有已注册的参数。
+        /// </summary>
+        public QueryBuilder ClearParameters()
+        {
+            Parameters.Clear();
+            return this;
         }
         /// <summary>
         /// 添加查询分组子句。
@@ -246,7 +289,7 @@ namespace EasySQL
         /// <returns>根据自身包括的查询对象，返回可执行的Sql查询语句。</returns>
         public string BuildSql()
         {
-            lock (this)
+            lock (_lock)
             {
                 string sql= this.BuildSql(0, 0, false);
                 if (this._unionList != null)
@@ -274,7 +317,7 @@ namespace EasySQL
         /// <returns></returns>
         public string BuildSql(int rowLimit, int rowOffset=0)
         {
-            lock (this)
+            lock (_lock)
             {
                 return this.BuildSql(rowLimit, rowOffset, false);
             }
@@ -286,45 +329,43 @@ namespace EasySQL
         /// <returns>根据自身包括的查询对象，返回可执行的Sql Count查询语句。</returns>
         public string BuildCountSql()
         {
-            string countSql=string.Empty;
             if (this._groupbybuilder != null && this._groupbybuilder.Length > 0)
             {
-                //考虑多线程安全，锁定本对象原子执行。
-                lock (this)
+                // 构建子查询计数：不修改 this 实例状态，保证线程安全。
+                // 先锁定以获取一致的别名快照。
+                string safeAlias;
+                lock (_lock)
                 {
-                    //保存原字段。
-                    List<string> oldSelectFields = this.SelectFields;
-                    string oldAlias = this.Alias;
-                    //bool needReset = false;
-                    try
+                    safeAlias = string.IsNullOrWhiteSpace(this.Alias) ? "A" : this.Alias;
+                    this.Alias = safeAlias;
+                }
+                try
+                {
+                    // 用原查询构建内层 SQL，然后外裹一层 Count 子查询
+                    var innerQb = new QueryBuilder(safeAlias, this.SQLDialect)
                     {
-                        _isSubCount = true;
-                        List<string> newSelectFields = new List<string>(1);
-                        QueryBuilder qb = new QueryBuilder();
-                        this.SelectFields = newSelectFields;
-                        this.SelectExpression("Count(1) AS RowsCount");
-                        qb.From(this);
-                        if (oldAlias == null || oldAlias.Trim().Length == 0)
-                        {
-                            this.Alias = "A";
-                        }
-                        countSql = qb.BuildSql();
-                    }
-                    catch { throw; }
-                    finally
+                        Readable = this.Readable
+                    };
+                    innerQb.From(this);
+                    innerQb.SelectExpression("Count(1) AS RowsCount");
+
+                    var outerQb = new QueryBuilder();
+                    outerQb.From(innerQb);
+                    return outerQb.BuildSql();
+                }
+                finally
+                {
+                    // 恢复原别名
+                    lock (_lock)
                     {
-                        //重置私有变量。
-                        this.Alias = oldAlias;
-                        this._isSubCount = false;
-                        this.SelectFields = oldSelectFields;
+                        this.Alias = safeAlias;
                     }
                 }
             }
             else
             {
-                countSql = BuildSql(0, 0, true);
+                return BuildSql(0, 0, true);
             }
-            return countSql;
         }
 
         /// <summary>

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -8,10 +9,16 @@ namespace EasySQL
     /// </summary>
     public class UpdateBuilder
     {
+        private readonly object _lock = new object();
         private const string UPDATE_SQL = "UPDATE {0} SET {1} WHERE {2}";
         private SchemaBase Table { get; set; }
         private IList<string> SetList { get; set; }
         private StringBuilder _wherebuilder = null;
+
+        /// <summary>
+        /// 参数化查询的参数集合。在条件中使用 @参数名，如 Set("Name", "@Name")，然后调用 AddParameter("Name", value)。
+        /// </summary>
+        public Dictionary<string, object> Parameters { get; } = new Dictionary<string, object>();
 
         /// <summary>
         /// 创建一个批量修改数据的SQL语句构造器。
@@ -21,6 +28,33 @@ namespace EasySQL
         {
             Table = table;
             SetList = new List<string>();
+        }
+
+        /// <summary>
+        /// 注册一个参数化查询参数，用于防止 SQL 注入。
+        /// </summary>
+        /// <param name="name">参数名称（不含 @ 前缀）。</param>
+        /// <param name="value">参数值。</param>
+        public UpdateBuilder AddParameter(string name, object value)
+        {
+            lock (_lock) { Parameters[name] = value; }
+            return this;
+        }
+
+        /// <summary>
+        /// 注册多个参数化查询参数。
+        /// </summary>
+        public UpdateBuilder AddParameters(IDictionary<string, object> parameters)
+        {
+            if (parameters != null)
+            {
+                lock (_lock)
+                {
+                    foreach (var kv in parameters)
+                        Parameters[kv.Key] = kv.Value;
+                }
+            }
+            return this;
         }
 
         /// <summary>

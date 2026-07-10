@@ -6,6 +6,7 @@ namespace EasySQL
 {
     public static class SQLDialectFactory
     {
+        private static readonly object _lock = new object();
         private static ISQLDialect  defaultDialect;
 
         private const string sqlconnection = "sqlconnection";
@@ -39,15 +40,24 @@ namespace EasySQL
             {
                 if (defaultDialect == null)
                 {
-                    defaultDialect = dialectDictionary[sqlconnection];
+                    lock (_lock)
+                    {
+                        if (defaultDialect == null)
+                        {
+                            defaultDialect = dialectDictionary[sqlconnection];
+                        }
+                    }
                 }
                 return defaultDialect;
             }
             set
             {
-                if (value!=null)
+                if (value != null)
                 {
-                    defaultDialect = value;
+                    lock (_lock)
+                    {
+                        defaultDialect = value;
+                    }
                 }
             }
         }
@@ -59,7 +69,10 @@ namespace EasySQL
             {
                 throw new Exception($"The SQLDialect name of {name} is not exists!");
             }
-            DefaultDialect = dialect;
+            lock (_lock)
+            {
+                DefaultDialect = dialect;
+            }
         }
 
         public static void UseDialect(IDbConnection connection)
