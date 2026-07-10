@@ -8,7 +8,7 @@ namespace EasySQL
     /// </summary>
     /// <remarks>
     /// <code>
-    /// var su = new UserSchema();
+    /// var su = new UserTableDef();
     /// var insert = new InsertBuilder(su)
     ///     .Insert(su.GetName(), su.GetEmail(), su.GetStatus())
     ///     .BuildSql("SELECT '张三', 'zhangsan@test.com', 1");
@@ -18,21 +18,21 @@ namespace EasySQL
     public class InsertBuilder
     {
         private const string INSERT_SQL = "INSERT INTO {0} ({1}) {2}";
-        private SchemaBase Table { get; set; }
+        private TableDefBase Table { get; set; }
         private IList<string> Fields { get; set; }
 
         /// <summary>
         /// 创建 INSERT 语句构造器。
         /// </summary>
-        /// <param name="table">插入目标表 Schema。</param>
-        public InsertBuilder(SchemaBase table)
+        /// <param name="table">插入目标表 TableDef。</param>
+        public InsertBuilder(TableDefBase table)
         {
             Table = table;
             Fields = new List<string>();
         }
 
         /// <summary>
-        /// 设置要插入的列名。推荐用 Schema 的字段 getter 获取列名。
+        /// 设置要插入的列名。推荐用 TableDef 的字段 getter 获取列名。
         /// </summary>
         /// <example>
         /// <code>

@@ -7,20 +7,20 @@ namespace EasySQL
     /// <summary>
     /// SQL 查询构建器，是 EasySQL 的核心入口。
     /// 通过流式 API 构建<strong>类型安全的 SQL 语句</strong>——
-    /// 用 Schema 的字段 getter 方法代替硬编码字符串，字段名变更时编译期即可发现错误。
+    /// 用 TableDef 的字段 getter 方法代替硬编码字符串，字段名变更时编译期即可发现错误。
     /// </summary>
     /// <remarks>
     /// <h3>标准写法</h3>
     /// <code>
-    /// // ① 实例化 Schema（多表按 sa/sb/sc 命名，别名全大写）
-    /// var sa = new UserSchema("SA");
-    /// var sb = new OrderSchema("SB");
+    /// // ① 实例化 TableDef（多表按 sa/sb/sc 命名，别名全大写）
+    /// var sa = new UserTableDef("SA");
+    /// var sb = new OrderTableDef("SB");
     ///
-    /// // ② 在各 Schema 上定义 SELECT 字段
+    /// // ② 在各 TableDef 上定义 SELECT 字段
     /// sa.Select(true, sa.GetName(), sa.GetEmail());
     /// sb.Select(true, sb.GetAmount());
     ///
-    /// // ③ Schema 之间定义 JOIN 关系
+    /// // ③ TableDef 之间定义 JOIN 关系
     /// sa.Join(sb, $"{sa.GetId()} = {sb.GetUserId()}");
     ///
     /// // ④ QueryBuilder 一次性 FROM，然后 WHERE / ORDER BY
@@ -36,7 +36,7 @@ namespace EasySQL
     /// var users = conn.Query&lt;User&gt;(sql, qb.Parameters.ToDynamicParameters());
     /// </code>
     /// </remarks>
-    public class QueryBuilder:SchemaBase
+    public class QueryBuilder:TableDefBase
     {
         private readonly object _lock = new object();
         private List<KeyValuePair<QueryBuilder,bool>>? _unionList = null;
@@ -86,7 +86,7 @@ namespace EasySQL
         /// <summary>
         /// 读取该查询的目标表（或视图、子查询）的列表。
         /// </summary>
-        public List<SchemaBase> FromItems { get; protected set; }
+        public List<TableDefBase> FromItems { get; protected set; }
 
         /// <summary>
         /// 创建一个<see cref="QueryBuilder"/>实例。
@@ -96,7 +96,7 @@ namespace EasySQL
         public QueryBuilder(string alias, ISQLDialect? dialect)
             : base(alias, dialect)
         {
-            this.FromItems = new List<SchemaBase>();
+            this.FromItems = new List<TableDefBase>();
             this.PrettyPrint = true;
         }
 
@@ -119,14 +119,14 @@ namespace EasySQL
 
         /// <summary>
         /// 指定查询数据源（FROM 子句）。支持多表、视图和子查询。
-        /// <strong>多个 Schema 之间如有 JOIN 关系，应先在各 Schema 上调用 Join/LeftJoin，再一次性 From。</strong>
+        /// <strong>多个 TableDef 之间如有 JOIN 关系，应先在各 TableDef 上调用 Join/LeftJoin，再一次性 From。</strong>
         /// </summary>
         /// <example>
         /// <code>
         /// // 单表
         /// qb.From(sa);
         ///
-        /// // 多表（JOIN 关系在 Schema 上定义）
+        /// // 多表（JOIN 关系在 TableDef 上定义）
         /// sa.Join(sb, $"{sa.GetId()} = {sb.GetUserId()}");
         /// qb.From(sa, sb);
         ///
@@ -138,8 +138,8 @@ namespace EasySQL
         /// qb.From(subQb);
         /// </code>
         /// </example>
-        /// <param name="items">数据源 Schema 列表。</param>
-        public QueryBuilder From( params SchemaBase[] items)
+        /// <param name="items">数据源 TableDef 列表。</param>
+        public QueryBuilder From( params TableDefBase[] items)
         {
             for (int i = 0; i < items.Length; i++)
             {
@@ -154,7 +154,7 @@ namespace EasySQL
 
         /// <summary>
         /// 添加 WHERE 条件，多个条件以 AND 连接。
-        /// <strong>必须使用 Schema 字段 getter + 插值写法</strong>，回避硬编码字段名。
+        /// <strong>必须使用 TableDef 字段 getter + 插值写法</strong>，回避硬编码字段名。
         /// </summary>
         /// <example>
         /// <code>
@@ -192,7 +192,7 @@ namespace EasySQL
 
         /// <summary>
         /// 注册一个参数化查询参数，用于防止 SQL 注入。
-        /// 在 WHERE 条件中用 <see cref="SchemaBase.AsParam"/> 生成占位符，然后用本方法注册参数值。
+        /// 在 WHERE 条件中用 <see cref="TableDefBase.AsParam"/> 生成占位符，然后用本方法注册参数值。
         /// </summary>
         /// <example>
         /// <code>
@@ -278,9 +278,9 @@ namespace EasySQL
         }
 
         /// <summary>
-        /// 清除掉Schema中的Selected Fields.
+        /// 清除掉TableDef中的Selected Fields.
         /// </summary>
-		public QueryBuilder ClearSchemaItemSelectFields()
+		public QueryBuilder ClearTableDefItemSelectFields()
 		{
 		    for (int i = 0; i < this.FromItems.Count; i++)
 		    {

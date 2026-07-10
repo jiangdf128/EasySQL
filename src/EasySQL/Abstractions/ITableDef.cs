@@ -2,9 +2,9 @@ namespace EasySQL
 {
     /// <summary>
     /// 表或视图结构接口，定义表名、别名、字段选择、连接等基本操作。
-    /// <see cref="SchemaBase"/> 提供了该接口的默认实现。
+    /// <see cref="TableDefBase"/> 提供了该接口的默认实现。
     /// </summary>
-    public interface ITableSchema
+    public interface ITableDef
     {
         /// <summary>
         /// 获取表或视图的名称。

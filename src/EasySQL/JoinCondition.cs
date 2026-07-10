@@ -8,12 +8,12 @@ namespace EasySQL
         /// <summary>
         /// 连接条件的源表（或视图、子查询）
         /// </summary>
-        public ITableSchema SourceSchema { get; private set; }
+        public ITableDef SourceTableDef { get; private set; }
 
         /// <summary>
         /// 连接条件的目标表（或视图、子查询）
         /// </summary>
-        public ITableSchema TargetSchema { get; private set; }
+        public ITableDef TargetTableDef { get; private set; }
 
         /// <summary>
         /// 查询连接类型
@@ -32,10 +32,10 @@ namespace EasySQL
         /// <param name="target"></param>
         /// <param name="clause"></param>
         /// <param name="joinType"></param>
-        public JoinCondition(ITableSchema source, ITableSchema target, string clause, JoinType joinType)
+        public JoinCondition(ITableDef source, ITableDef target, string clause, JoinType joinType)
         {
-            this.SourceSchema    = source;
-            this.TargetSchema = target;
+            this.SourceTableDef    = source;
+            this.TargetTableDef = target;
             this.OnClause = clause;
             this.JoinClass = joinType;
         }
@@ -46,7 +46,7 @@ namespace EasySQL
         /// <returns></returns>
         public string GetJoinClause()
         {
-            var dialect = this.SourceSchema.SQLDialect! ?? this.TargetSchema.SQLDialect!;
+            var dialect = this.SourceTableDef.SQLDialect! ?? this.TargetTableDef.SQLDialect!;
            return dialect.GetJoinClause(this);
         }
     }

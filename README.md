@@ -26,12 +26,12 @@ dotnet add package EasySQL
 
 ## 🚀 快速开始
 
-### 定义 Schema
+### 定义 TableDef
 
 ```csharp
 using EasySQL;
 
-public class UserSchema : SchemaBase
+public class UserTableDef : TableDefBase
 {
     public const string TABLE = "Users";
     public const string ID = "Id";
@@ -40,8 +40,8 @@ public class UserSchema : SchemaBase
 
     public override string TableName => TABLE;
 
-    public UserSchema(string alias, ISQLDialect? dialect = null) : base(alias, dialect) { }
-    public UserSchema() : this(string.Empty, null) { }
+    public UserTableDef(string alias, ISQLDialect? dialect = null) : base(alias, dialect) { }
+    public UserTableDef() : this(string.Empty, null) { }
 
     // 实例属性 — 返回原始字段名（用于 Select 多字段选取）
     public string Id => ID;
@@ -58,8 +58,8 @@ public class UserSchema : SchemaBase
 ### 构建查询
 
 ```csharp
-var sa = new UserSchema("SA");
-var sb = new OrderSchema("SB");
+var sa = new UserTableDef("SA");
+var sb = new OrderTableDef("SB");
 
 // 多字段选取（标准写法）
 sa.Select(true, sa.Name, sa.Email);
@@ -112,7 +112,7 @@ public class UserService(IEasySQLContext db)
     {
         return await db.DoAsync(async conn =>
         {
-            var u = new UserSchema("u");
+            var u = new UserTableDef("u");
             u.Select(true, u.Name, u.Email);
             var qb = new QueryBuilder().From(u);
             return await conn.QueryAsync<User>(qb.BuildSql());

@@ -6,11 +6,11 @@ namespace EasySQL
 {
     /// <summary>
     /// UPDATE 语句构造器。通过流式 API 构建<strong>类型安全的更新 SQL</strong>。
-    /// 用 Schema 的字段 getter 代替硬编码字段名，字段变更时编译立即可发现。
+    /// 用 TableDef 的字段 getter 代替硬编码字段名，字段变更时编译立即可发现。
     /// </summary>
     /// <remarks>
     /// <code>
-    /// var su = new UserSchema();
+    /// var su = new UserTableDef();
     /// var update = new UpdateBuilder(su)
     ///     .Set(su.GetName(), su.AsParam("Name"))
     ///     .Set(su.GetStatus(), 1)
@@ -26,12 +26,12 @@ namespace EasySQL
     {
         private readonly object _lock = new object();
         private const string UPDATE_SQL = "UPDATE {0} SET {1} WHERE {2}";
-        private SchemaBase Table { get; set; }
+        private TableDefBase Table { get; set; }
         private IList<string> SetList { get; set; }
         private StringBuilder? _wherebuilder = null;
 
         /// <summary>
-        /// 参数化查询的参数集合。使用 <see cref="SchemaBase.AsParam"/> 生成占位符，
+        /// 参数化查询的参数集合。使用 <see cref="TableDefBase.AsParam"/> 生成占位符，
         /// 用 <see cref="AddParameter"/> 注册值，二者配合完成参数化。
         /// </summary>
         public Dictionary<string, object> Parameters { get; } = new Dictionary<string, object>();
@@ -39,15 +39,15 @@ namespace EasySQL
         /// <summary>
         /// 创建 UPDATE 语句构造器。
         /// </summary>
-        /// <param name="table">更新目标表 Schema。</param>
-        public UpdateBuilder(SchemaBase table)
+        /// <param name="table">更新目标表 TableDef。</param>
+        public UpdateBuilder(TableDefBase table)
         {
             Table = table;
             SetList = new List<string>();
         }
 
         /// <summary>
-        /// 注册参数值。参数名不含 @ 前缀，与 <see cref="SchemaBase.AsParam"/> 生成的占位符对应。
+        /// 注册参数值。参数名不含 @ 前缀，与 <see cref="TableDefBase.AsParam"/> 生成的占位符对应。
         /// </summary>
         /// <example>
         /// <code>
@@ -80,7 +80,7 @@ namespace EasySQL
         }
 
         /// <summary>
-        /// 设置字段值。字段名推荐用 Schema 的字段 getter，值可以是常量或参数占位符。
+        /// 设置字段值。字段名推荐用 TableDef 的字段 getter，值可以是常量或参数占位符。
         /// </summary>
         /// <example>
         /// <code>
@@ -122,7 +122,7 @@ namespace EasySQL
 
 
         /// <summary>
-        /// 添加 WHERE 条件，多个条件以 AND 连接。推荐用 Schema 字段 getter + AsParam。
+        /// 添加 WHERE 条件，多个条件以 AND 连接。推荐用 TableDef 字段 getter + AsParam。
         /// </summary>
         /// <example>
         /// <code>

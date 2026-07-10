@@ -87,9 +87,9 @@ namespace EasySQL.Test.Tests.Integration
                 conn.Insert(new OrderPayment { OrderId = order.Id, PayMethod = 1, Amount = 6999, Status = 2 });
 
                 // 复杂多表查询 → EasySQL
-                var sa = new UserSchema("SA");
-                var sb = new OrderSchema("SB");
-                var sc= new OrderPaymentSchema("SC");
+                var sa = new UserTableDef("SA");
+                var sb = new OrderTableDef("SB");
+                var sc= new OrderPaymentTableDef("SC");
 
 
                 sa.Select(true, sa.UserName);
@@ -105,9 +105,9 @@ namespace EasySQL.Test.Tests.Integration
                 Assert.Single(rows);
 
                 // 复杂批量删除 → EasySQL（QueryBuilder 构造子查询 + DeleteBuilder 级联清理）
-                var sp = new OrderPaymentSchema();
-                var si = new OrderItemSchema();
-                var so = new OrderSchema();
+                var sp = new OrderPaymentTableDef();
+                var si = new OrderItemTableDef();
+                var so = new OrderTableDef();
                 so.Select(true, so.Id);
                 var subQb = new QueryBuilder().From(so)
                     .Where($"{so.GetOrderNo()} = 'ORD_FULL'");
@@ -147,9 +147,9 @@ namespace EasySQL.Test.Tests.Integration
                 var item = new OrderItem { OrderId = order.Id, ProductId = prod.Id, Quantity = 1, UnitPrice = 9999 };
                 conn.Insert(item);
 
-                var sa = new UserSchema("SA");
-                var sb = new OrderSchema("SB");
-                var sc = new OrderItemSchema("SC");
+                var sa = new UserTableDef("SA");
+                var sb = new OrderTableDef("SB");
+                var sc = new OrderItemTableDef("SC");
                 sa.Select(true, sa.UserName);
                 sb.Select(true, sb.OrderNo);
                 sc.Select(true, sc.Quantity, sc.UnitPrice);
@@ -191,7 +191,7 @@ namespace EasySQL.Test.Tests.Integration
                 conn.Insert(new OrderItem { OrderId = o1.Id, ProductId = p2.Id, Quantity = 1, UnitPrice = 299 });
                 conn.Insert(new OrderItem { OrderId = o2.Id, ProductId = p1.Id, Quantity = 1, UnitPrice = 99 });
 
-                var s = new OrderItemSchema("i");
+                var s = new OrderItemTableDef("i");
                 s.Select(true, s.ProductId);
                 s.SelectExpression("SUM(Quantity) AS TotalQty");
                 var qb = new QueryBuilder().From(s)
@@ -219,7 +219,7 @@ namespace EasySQL.Test.Tests.Integration
                 for (int i = 1; i <= 15; i++)
                     conn.Insert(new Order { UserId = user.Id, OrderNo = $"PAGE_{i:D3}", TotalAmount = i * 100 });
 
-                var s = new OrderSchema("o");
+                var s = new OrderTableDef("o");
                 s.Select(true, s.OrderNo, s.TotalAmount);
                 var qb = new QueryBuilder().From(s)
                     .Where($"{s.GetOrderNo()} LIKE 'PAGE_%'")
@@ -245,7 +245,7 @@ namespace EasySQL.Test.Tests.Integration
         {
             EasySQLContext.Default.Do(conn =>
             {
-                var s = new UserSchema("u");
+                var s = new UserTableDef("u");
                 s.Select(true, s.UserName);
                 var qb = new QueryBuilder().From(s)
                     .Where($"{s.GetUserName()} = {s.AsParam("Name")}")
@@ -264,14 +264,14 @@ namespace EasySQL.Test.Tests.Integration
         public void Update_NoWhere_ShouldThrow()
         {
             Assert.Throws<InvalidOperationException>(() =>
-                new UpdateBuilder(new UserSchema()).Set(new UserSchema().GetUserName(), "x").BuildSql());
+                new UpdateBuilder(new UserTableDef()).Set(new UserTableDef().GetUserName(), "x").BuildSql());
         }
 
         [Fact]
         public void Delete_NoWhere_ShouldThrow()
         {
             Assert.Throws<InvalidOperationException>(() =>
-                new DeleteBuilder(new UserSchema()).BuildSql());
+                new DeleteBuilder(new UserTableDef()).BuildSql());
         }
     }
 }

@@ -22,10 +22,10 @@ namespace <%=NamespaceName%>
 {
 	<% if(!String.IsNullOrEmpty(SourceTable.Description))	{%>
     ///<summary> 
-	/// <%=SourceTable.Description %> Schema。
+	/// <%=SourceTable.Description %> TableDef。
     ///</summary>
 	<%}%>
-	public class <%= className %>:SchemaBase
+	public class <%= className %>:TableDefBase
 	{   
         #region 数据表名及列名的常量定义
         
@@ -52,7 +52,7 @@ namespace <%=NamespaceName%>
 		%>
         #endregion
     
-    	#region 实现SchemaBase抽象类接口。
+    	#region 实现TableDefBase抽象类接口。
 		/// <summary>
         /// 获取表（或视图）架构的名称。
         /// </summary>
@@ -134,7 +134,7 @@ public string GetClassName(TableSchema table)
 	{
 		name = name.Substring(0, name.Length - 1);
 	}
-	return name + "Schema";
+	return name + "TableDef";
 }
 
 </script>

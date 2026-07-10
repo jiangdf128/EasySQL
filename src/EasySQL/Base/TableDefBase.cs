@@ -5,9 +5,9 @@ using System.Text;
 namespace EasySQL
 {
     /// <summary>
-    /// 实现了ITableSchema部分接口的抽象类，所有生成的表（或视图）结构的Schema类，都需要继承于这个抽象类。
+    /// 实现了ITableDef部分接口的抽象类，所有生成的表（或视图）结构的TableDef类，都需要继承于这个抽象类。
     /// </summary>
-    public abstract class SchemaBase:ITableSchema
+    public abstract class TableDefBase:ITableDef
     {
         internal List<JoinCondition> Joins { private set; get; }
         internal List<string> SelectFields { get; set; }
@@ -59,7 +59,7 @@ namespace EasySQL
             }
         }
 
-        #region ITableSchema 成员
+        #region ITableDef 成员
 
         /// <summary>
         /// 获取表或视图的名称。
@@ -136,7 +136,7 @@ namespace EasySQL
         /// <param name="target">目标表（或视图）对象</param>
         /// <param name="clause">连接条件。</param>
         /// <param name="joinType">连接类型。</param>
-        protected virtual SchemaBase AddJoin(ITableSchema target, string clause, JoinType joinType)
+        protected virtual TableDefBase AddJoin(ITableDef target, string clause, JoinType joinType)
         {
             this.Check(target);
             this.Joins.Add(new JoinCondition(this, target, clause, joinType));
@@ -150,7 +150,7 @@ namespace EasySQL
         /// <param name="leftField">参与连接的左边字段名。</param>
         /// <param name="rightField">参与连接的右边字段名。</param>
         /// <param name="joinType">连接类型。</param>
-        protected virtual SchemaBase AddJoin(ITableSchema target, string leftField, string rightField, JoinType joinType)
+        protected virtual TableDefBase AddJoin(ITableDef target, string leftField, string rightField, JoinType joinType)
         {
             return this.AddJoin(target, string.Format("{0}={1}", leftField, rightField), joinType);
         }
@@ -164,7 +164,7 @@ namespace EasySQL
         /// <param name="leftField2">参与连接的左边字段名2。</param>
         /// <param name="rightField2">参与连接的右边字段名2。</param>
         /// <param name="joinType">连接类型。</param>
-        protected virtual SchemaBase AddJoin(ITableSchema target, string leftField1, string rightField1, string leftField2, string rightField2, JoinType joinType)
+        protected virtual TableDefBase AddJoin(ITableDef target, string leftField1, string rightField1, string leftField2, string rightField2, JoinType joinType)
         {
            return this.AddJoin(target, string.Format("{0}={1} and {2}={3}", leftField1, rightField1, leftField2, rightField2), joinType);
         }
@@ -180,7 +180,7 @@ namespace EasySQL
         /// <param name="leftField3">参与连接的左边字段名3。</param>
         /// <param name="rightField3">参与连接的右边字段名3。</param>
         /// <param name="joinType">连接类型。</param>
-        protected virtual SchemaBase AddJoin(ITableSchema target, string leftField1, string rightField1, string leftField2, string rightField2, string leftField3, string rightField3, JoinType joinType)
+        protected virtual TableDefBase AddJoin(ITableDef target, string leftField1, string rightField1, string leftField2, string rightField2, string leftField3, string rightField3, JoinType joinType)
         {
             return this.AddJoin(target, string.Format("{0}={1} and {2}={3} and {4}={5}", leftField1, rightField1, leftField2, rightField2, leftField3, rightField3), joinType);
         }
@@ -197,7 +197,7 @@ namespace EasySQL
         /// <param name="rightField3">参与连接的右边字段名3。</param>
         /// <param name="customFilters">自定义连接查询条件。</param>
         /// <param name="joinType">连接类型。</param>
-        public virtual SchemaBase AddJoin(ITableSchema target, string leftField1, string rightField1, string leftField2, string rightField2, string leftField3, string rightField3, string customFilters, JoinType joinType)
+        public virtual TableDefBase AddJoin(ITableDef target, string leftField1, string rightField1, string leftField2, string rightField2, string leftField3, string rightField3, string customFilters, JoinType joinType)
         {
             leftField1 = leftField1.Trim();
             leftField2 = leftField2.Trim();
@@ -244,7 +244,7 @@ namespace EasySQL
         /// 碰到这种情况，程序会抛出一个异常错误消息。
         /// </summary>
         /// <param name="item">连接或查询的目标对象。</param>
-        protected void Check(ITableSchema item)
+        protected void Check(ITableDef item)
         {
             //进行连接的时候，是不允许连接自身，或者包括自身的子查询！
             if (this == item)
@@ -259,7 +259,7 @@ namespace EasySQL
                     //不能够把包含自身的查询作为自己的子查询，否则构造SQL语句的时候会造成无限循环，以及堆栈溢出。
                     throw new Exception("It can't join(or be from) the sub query that contains itself.");
                 }
-                foreach (SchemaBase fitem in qb.FromItems)
+                foreach (TableDefBase fitem in qb.FromItems)
                 {
                     Check(fitem);
                 }
@@ -271,11 +271,11 @@ namespace EasySQL
         #region 构造函数
 
         /// <summary>
-        /// 抽象类<see cref="SchemaBase"/>的构造函数。
+        /// 抽象类<see cref="TableDefBase"/>的构造函数。
         /// </summary>
         /// <param name="alias">表（或视图）的别名。</param>
         /// <param name="dialect">数据方言。</param>
-        public SchemaBase(string alias, ISQLDialect? dialect)
+        public TableDefBase(string alias, ISQLDialect? dialect)
         {
             this.SelectFields = new List<string>();
             this.Joins = new List<JoinCondition>();
@@ -283,10 +283,10 @@ namespace EasySQL
             this.SQLDialect = dialect ?? SQLDialectFactory.DefaultDialect;
         }
         /// <summary>
-        /// 抽象类<see cref="SchemaBase"/>的构造函数。
+        /// 抽象类<see cref="TableDefBase"/>的构造函数。
         /// </summary>
         /// <param name="alias">表（或视图）的别名。</param>
-        public SchemaBase(string alias)
+        public TableDefBase(string alias)
             : this(alias, null)
         {
         }
@@ -363,7 +363,7 @@ namespace EasySQL
         /// <summary>
         /// 选择表所有字段（生成 <c>u.*</c> 或 <c>*</c>）。
         /// </summary>
-        public SchemaBase Select()
+        public TableDefBase Select()
         {
             return this.SelectExpression(string.IsNullOrWhiteSpace(this.Alias) ? "*":$"{this.Alias}.*" );
         }
@@ -372,12 +372,12 @@ namespace EasySQL
         /// 选择单个字段作为查询列。如果字段是保留关键字，方言会自动加引号转义。
         /// </summary>
         /// <remarks>
-        /// 推荐用 Schema 的字段 getter 方法：
+        /// 推荐用 TableDef 的字段 getter 方法：
         /// <code>user.Select(user.GetName());</code>
         /// 不要直接写表达式（如 <c>"Amount-Tax"</c>），表达式应使用 <see cref="SelectExpression"/>。
         /// </remarks>
         /// <param name="field">字段名，推荐通过 <c>schema.GetXxx()</c> 获取。</param>
-        public SchemaBase Select(string field)
+        public TableDefBase Select(string field)
         {
             return this.Select(field, false);
         }
@@ -387,7 +387,7 @@ namespace EasySQL
         /// </summary>
         /// <param name="field">数据表（或视图）的字段名称。</param>
         /// <param name="needPrefix">是否需要使用表别名限定。</param>
-        public SchemaBase Select(string field, bool needPrefix)
+        public TableDefBase Select(string field, bool needPrefix)
         {
             return this.Select(field, string.Empty, needPrefix);
         }
@@ -397,7 +397,7 @@ namespace EasySQL
         /// </summary>
         /// <param name="field">数据表（或视图）的字段名称。</param>
         /// <param name="fieldAlias">列别名。</param>
-        public SchemaBase Select(string field, string fieldAlias)
+        public TableDefBase Select(string field, string fieldAlias)
         {
             return this.Select(field, fieldAlias, false);
         }
@@ -408,7 +408,7 @@ namespace EasySQL
         /// <param name="field">数据表（或视图）的字段名称。</param>
         /// <param name="fieldAlias">列别名。</param>
         /// <param name="needPrefix">是否需要使用表别名限定。</param>
-        public SchemaBase Select(string field, string fieldAlias, bool needPrefix)
+        public TableDefBase Select(string field, string fieldAlias, bool needPrefix)
         {
             string item = GetSqlFormatField(field, fieldAlias, needPrefix);
             this.SelectFields.Add(item);
@@ -420,7 +420,7 @@ namespace EasySQL
         /// </summary>
         /// <param name="needPrefix">是否需要使用表别名限定。</param>
         /// <param name="fields">字段名1,字段名2......</param>
-        public SchemaBase Select(bool needPrefix, params string[] fields)
+        public TableDefBase Select(bool needPrefix, params string[] fields)
         {
             for (int i = 0; i < fields.Length; i++)
             {
@@ -436,7 +436,7 @@ namespace EasySQL
         /// 选择用户表达式，可以是多个。需要使用表别名的字段（或修饰特定关键字）的情况，请程序员着情自行指定。
         /// </summary>
         /// <param name="expressions">表达式1，表达式2......</param>
-        public SchemaBase SelectExpression(params string[] expressions)
+        public TableDefBase SelectExpression(params string[] expressions)
         {
             for (int i = 0; i < expressions.Length; i++)
             {
@@ -455,20 +455,20 @@ namespace EasySQL
         /// </summary>
         /// <param name="expression">表达式。</param>
         /// <param name="aliasName">结果列的别名。</param>
-        public SchemaBase SelectExpressionAlias(string expression,string aliasName)
+        public TableDefBase SelectExpressionAlias(string expression,string aliasName)
         {
             this.SelectFields.Add(string.Format("{0} AS {1}", expression, this.SQLDialect!.QuoteField(aliasName)));
             return this;
         }
 
         /// <summary>
-        /// INNER JOIN 连接。在 Schema 实例间定义连接关系，
-        /// 然后通过 <see cref="QueryBuilder.From(System.SchemaBase[])" /> 一次性注册到查询中。
+        /// INNER JOIN 连接。在 TableDef 实例间定义连接关系，
+        /// 然后通过 <see cref="QueryBuilder.From(System.TableDefBase[])" /> 一次性注册到查询中。
         /// </summary>
         /// <example>
         /// <code>
-        /// var sa = new UserSchema("SA");
-        /// var sb = new OrderSchema("SB");
+        /// var sa = new UserTableDef("SA");
+        /// var sb = new OrderTableDef("SB");
         ///
         /// // 单字段连接（类型安全，字段名变更时编译报错）
         /// sa.Join(sb, $"{sa.GetId()} = {sb.GetUserId()}");
@@ -481,9 +481,9 @@ namespace EasySQL
         /// qb.From(sa, sb);
         /// </code>
         /// </example>
-        /// <param name="target">要连接的目标表 Schema。</param>
+        /// <param name="target">要连接的目标表 TableDef。</param>
         /// <param name="clause">ON 条件表达式。</param>
-        public SchemaBase Join(ITableSchema target, string clause)
+        public TableDefBase Join(ITableDef target, string clause)
         {
             return this.AddJoin(target, clause, JoinType.Inner);
         }
@@ -494,7 +494,7 @@ namespace EasySQL
         /// <param name="target">目标表（或视图）对象</param>
         /// <param name="leftField">参与自然连接的左边字段名。</param>
         /// <param name="rightField">参与自然连接的右边字段名。</param>
-        public SchemaBase Join(ITableSchema target, string leftField, string rightField)
+        public TableDefBase Join(ITableDef target, string leftField, string rightField)
         {
             return this.AddJoin(target, string.Format("{0}={1}", leftField, rightField),JoinType.Inner);
         }
@@ -507,7 +507,7 @@ namespace EasySQL
         /// <param name="rightField1">参与自然连接的右边字段名1。</param>
         /// <param name="leftField2">参与自然连接的左边字段名2。</param>
         /// <param name="rightField2">参与自然连接的右边字段名2。</param>
-        public SchemaBase Join(ITableSchema target, string leftField1, string rightField1, string leftField2, string rightField2)
+        public TableDefBase Join(ITableDef target, string leftField1, string rightField1, string leftField2, string rightField2)
         {
             return this.AddJoin(target, string.Format("{0}={1} and {2}={3}", leftField1, rightField1,leftField2,rightField2), JoinType.Inner);
         }
@@ -522,7 +522,7 @@ namespace EasySQL
         /// <param name="rightField2">参与自然连接的右边字段名2。</param>
         /// <param name="leftField3">参与自然连接的左边字段名3。</param>
         /// <param name="rightField3">参与自然连接的右边字段名3。</param>
-        public SchemaBase Join(ITableSchema target, string leftField1, string rightField1, string leftField2, string rightField2, string leftField3, string rightField3)
+        public TableDefBase Join(ITableDef target, string leftField1, string rightField1, string leftField2, string rightField2, string leftField3, string rightField3)
         {
             return this.AddJoin(target, string.Format("{0}={1} and {2}={3} and {4}={5}", leftField1, rightField1, leftField2, rightField2,leftField3,rightField3), JoinType.Inner);
         }
@@ -532,7 +532,7 @@ namespace EasySQL
         /// </summary>
         /// <param name="target">目标表（或视图）对象</param>
         /// <param name="clause">连接条件子句。</param>
-        public SchemaBase LeftJoin(ITableSchema target, string clause)
+        public TableDefBase LeftJoin(ITableDef target, string clause)
         {
             return this.AddJoin(target, clause, JoinType.Left);
         }
@@ -543,7 +543,7 @@ namespace EasySQL
         /// <param name="target">目标表（或视图）对象</param>
         /// <param name="leftField">参与左外连接的左边字段名。</param>
         /// <param name="rightField">参与左外连接的右边字段名。</param>
-        public SchemaBase LeftJoin(ITableSchema target, string leftField, string rightField)
+        public TableDefBase LeftJoin(ITableDef target, string leftField, string rightField)
         {
             return this.AddJoin(target, string.Format("{0}={1}", leftField, rightField), JoinType.Left);
         }
@@ -556,7 +556,7 @@ namespace EasySQL
         /// <param name="rightField1">参与左外连接的右边字段名1。</param>
         /// <param name="leftField2">参与左外连接的左边字段名2。</param>
         /// <param name="rightField2">参与左外连接的右边字段名2。</param>
-        public SchemaBase LeftJoin(ITableSchema target, string leftField1, string rightField1, string leftField2, string rightField2)
+        public TableDefBase LeftJoin(ITableDef target, string leftField1, string rightField1, string leftField2, string rightField2)
         {
             return this.AddJoin(target, string.Format("{0}={1} and {2}={3}", leftField1, rightField1, leftField2, rightField2), JoinType.Left);
         }
@@ -571,7 +571,7 @@ namespace EasySQL
         /// <param name="rightField2">参与左外连接的右边字段名2。</param>
         /// <param name="leftField3">参与左外连接的左边字段名3。</param>
         /// <param name="rightField3">参与左外连接的右边字段名3。</param>
-        public SchemaBase LeftJoin(ITableSchema target, string leftField1, string rightField1, string leftField2, string rightField2, string leftField3, string rightField3)
+        public TableDefBase LeftJoin(ITableDef target, string leftField1, string rightField1, string leftField2, string rightField2, string leftField3, string rightField3)
         {
             return this.AddJoin(target, string.Format("{0}={1} and {2}={3} and {4}={5}", leftField1, rightField1, leftField2, rightField2,leftField3,rightField3), JoinType.Left);
         }
@@ -581,7 +581,7 @@ namespace EasySQL
         /// </summary>
         /// <param name="target">目标表（或视图）对象</param>
         /// <param name="clause">连接条件子句。</param>
-        public SchemaBase RightJoin(ITableSchema target, string clause)
+        public TableDefBase RightJoin(ITableDef target, string clause)
         {
             return this.AddJoin(target, clause, JoinType.Right);
         }
@@ -592,7 +592,7 @@ namespace EasySQL
         /// <param name="target">目标表（或视图）对象</param>
         /// <param name="leftField">参与右外连接的左边字段名。</param>
         /// <param name="rightField">参与右外连接的右边字段名。</param>
-        public SchemaBase RightJoin(ITableSchema target, string leftField, string rightField)
+        public TableDefBase RightJoin(ITableDef target, string leftField, string rightField)
         {
             return this.AddJoin(target, string.Format("{0}={1}", leftField, rightField), JoinType.Right);
         }
@@ -605,7 +605,7 @@ namespace EasySQL
         /// <param name="rightField1">参与右外连接的右边字段名1。</param>
         /// <param name="leftField2">参与右外连接的左边字段名2。</param>
         /// <param name="rightField2">参与右外连接的右边字段名2。</param>
-        public SchemaBase RightJoin(ITableSchema target, string leftField1, string rightField1, string leftField2, string rightField2)
+        public TableDefBase RightJoin(ITableDef target, string leftField1, string rightField1, string leftField2, string rightField2)
         {
             return this.AddJoin(target, string.Format("{0}={1} and {2}={3}", leftField1, rightField1, leftField2, rightField2), JoinType.Right);
         }
@@ -620,7 +620,7 @@ namespace EasySQL
         /// <param name="rightField2">参与右外连接的右边字段名2。</param>
         /// <param name="leftField3">参与右外连接的左边字段名3。</param>
         /// <param name="rightField3">参与右外连接的右边字段名3。</param>
-        public SchemaBase RightJoin(ITableSchema target, string leftField1, string rightField1, string leftField2, string rightField2, string leftField3, string rightField3)
+        public TableDefBase RightJoin(ITableDef target, string leftField1, string rightField1, string leftField2, string rightField2, string leftField3, string rightField3)
         {
             return this.AddJoin(target, string.Format("{0}={1} and {2}={3} and {4}={5}", leftField1, rightField1, leftField2, rightField2, leftField3, rightField3), JoinType.Right);
         }
@@ -630,7 +630,7 @@ namespace EasySQL
         /// </summary>
         /// <param name="target">目标表（或视图）对象</param>
         /// <param name="clause">连接条件子句。</param>
-        public SchemaBase OuterJoin(ITableSchema target, string clause)
+        public TableDefBase OuterJoin(ITableDef target, string clause)
         {
             return this.AddJoin(target, clause, JoinType.Outer);
         }
@@ -641,7 +641,7 @@ namespace EasySQL
         /// <param name="target">目标表（或视图）对象</param>
         /// <param name="leftField">参与全外连接的左边字段名。</param>
         /// <param name="rightField">参与全外连接的右边字段名。</param>
-        public SchemaBase OuterJoin(ITableSchema target, string leftField, string rightField)
+        public TableDefBase OuterJoin(ITableDef target, string leftField, string rightField)
         {
             return this.AddJoin(target, string.Format("{0}={1}", leftField, rightField), JoinType.Outer);
         }
@@ -654,7 +654,7 @@ namespace EasySQL
         /// <param name="rightField1">参与全外连接的右边字段名1。</param>
         /// <param name="leftField2">参与全外连接的左边字段名2。</param>
         /// <param name="rightField2">参与全外连接的右边字段名2。</param>
-        public SchemaBase OuterJoin(ITableSchema target, string leftField1, string rightField1, string leftField2, string rightField2)
+        public TableDefBase OuterJoin(ITableDef target, string leftField1, string rightField1, string leftField2, string rightField2)
         {
             return this.AddJoin(target, string.Format("{0}={1} and {2}={3}", leftField1, rightField1, leftField2, rightField2), JoinType.Outer);
         }
@@ -670,7 +670,7 @@ namespace EasySQL
         /// <param name="leftField3">参与全外连接的左边字段名3。</param>
         /// <param name="rightField3">参与全外连接的右边字段名3。</param>
 
-        public SchemaBase OuterJoin(ITableSchema target, string leftField1, string rightField1, string leftField2, string rightField2, string leftField3, string rightField3)
+        public TableDefBase OuterJoin(ITableDef target, string leftField1, string rightField1, string leftField2, string rightField2, string leftField3, string rightField3)
         {
             return this.AddJoin(target, string.Format("{0}={1} and {2}={3} and {4}={5}", leftField1, rightField1, leftField2, rightField2, leftField3, rightField3), JoinType.Outer);
         }

@@ -19,8 +19,8 @@ namespace EasySQL.Test
             Console.ResetColor();
         }
 
-        // ---- 测试用轻量 Schema（避免与 Schemas/ 下的真实 Schema 冲突） ----
-        class TestUserSchema : SchemaBase
+        // ---- 测试用轻量 TableDef（避免与 TableDefs/ 下的真实 TableDef 冲突） ----
+        class TestUserTableDef : TableDefBase
         {
             public const string TABLE = "Users";
             public const string ID = "Id";
@@ -29,7 +29,7 @@ namespace EasySQL.Test
             public const string STATUS = "Status";
 
             public override string TableName => TABLE;
-            public TestUserSchema(string? alias = null, ISQLDialect? dialect = null) : base(alias ?? string.Empty, dialect) { }
+            public TestUserTableDef(string? alias = null, ISQLDialect? dialect = null) : base(alias ?? string.Empty, dialect) { }
 
             public string GetId(bool needPrefix = true) => QuoteField(ID, needPrefix);
             public string GetName(bool needPrefix = true) => QuoteField(NAME, needPrefix);
@@ -37,7 +37,7 @@ namespace EasySQL.Test
             public string GetStatus(bool needPrefix = true) => QuoteField(STATUS, needPrefix);
         }
 
-        class TestOrderSchema : SchemaBase
+        class TestOrderTableDef : TableDefBase
         {
             public const string TABLE = "Orders";
             public const string ID = "Id";
@@ -46,7 +46,7 @@ namespace EasySQL.Test
             public const string CREATE_TIME = "CreateTime";
 
             public override string TableName => TABLE;
-            public TestOrderSchema(string? alias = null, ISQLDialect? dialect = null) : base(alias ?? string.Empty, dialect) { }
+            public TestOrderTableDef(string? alias = null, ISQLDialect? dialect = null) : base(alias ?? string.Empty, dialect) { }
 
             public string GetId(bool needPrefix = true) => QuoteField(ID, needPrefix);
             public string GetUserId(bool needPrefix = true) => QuoteField(USER_ID, needPrefix);
@@ -61,7 +61,7 @@ namespace EasySQL.Test
         public void BuildSimpleSelect_ShouldGenerateCorrectSQL()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select(s.GetName());
             s.Select(s.GetEmail());
 
@@ -76,7 +76,7 @@ namespace EasySQL.Test
         public void SelectAllFields_ShouldGenerateStar()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select();
 
             var qb = new QueryBuilder().From(s);
@@ -90,7 +90,7 @@ namespace EasySQL.Test
         public void SelectDistinct_ShouldGenerateDistinctKeyword()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select(s.GetStatus());
 
             var qb = new QueryBuilder().From(s);
@@ -108,7 +108,7 @@ namespace EasySQL.Test
         public void WhereClause_ShouldGenerateCorrectCondition()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s)
@@ -123,7 +123,7 @@ namespace EasySQL.Test
         public void GroupByAndHaving_ShouldGenerateCorrectClauses()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select(s.GetStatus());
             s.SelectExpression("Count(1) AS Cnt");
 
@@ -141,7 +141,7 @@ namespace EasySQL.Test
         public void OrderBy_ShouldGenerateCorrectSorting()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select(s.GetName(), s.GetEmail());
 
             var qb = new QueryBuilder().From(s)
@@ -159,8 +159,8 @@ namespace EasySQL.Test
         public void InnerJoin_ShouldGenerateCorrectJoinClause()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
-            var sb = new TestOrderSchema("o");
+            var s = new TestUserTableDef("u");
+            var sb = new TestOrderTableDef("o");
             s.Select(s.GetName());
             sb.Select(sb.GetAmount());
             s.Join(sb, "u.Id = o.UserId");
@@ -176,8 +176,8 @@ namespace EasySQL.Test
         public void LeftJoin_ShouldGenerateLeftOuterJoin()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
-            var sb = new TestOrderSchema("o");
+            var s = new TestUserTableDef("u");
+            var sb = new TestOrderTableDef("o");
             s.Select(s.GetName());
             sb.Select(sb.GetAmount());
             s.LeftJoin(sb, "u.Id=o.UserId");
@@ -196,7 +196,7 @@ namespace EasySQL.Test
         public void BuildCountSql_NoGroupBy_ShouldGenerateSimpleCount()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s)
@@ -212,7 +212,7 @@ namespace EasySQL.Test
         public void BuildCountSql_WithGroupBy_ShouldGenerateWrappedCount()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select(s.GetStatus());
             s.SelectExpression("Count(1) AS Cnt");
 
@@ -231,7 +231,7 @@ namespace EasySQL.Test
         public void Paging_SqlServer_WithOrderBy_ShouldUseOffsetFetch()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select(s.GetName(), s.GetEmail());
 
             var qb = new QueryBuilder().From(s)
@@ -246,7 +246,7 @@ namespace EasySQL.Test
         public void Paging_SqlServer_NoOrderBy_ShouldAddDummyOrderBy()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s);
@@ -265,7 +265,7 @@ namespace EasySQL.Test
         public void Paging_MySQL_ShouldUseLimitOffset()
         {
             SQLDialectFactory.UseDialect("mysqlconnection");
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s);
@@ -280,7 +280,7 @@ namespace EasySQL.Test
         public void Paging_PostgreSQL_ShouldUseLimitOffset()
         {
             SQLDialectFactory.UseDialect("npgsqlconnection");
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s);
@@ -298,7 +298,7 @@ namespace EasySQL.Test
         public void Paging_Oracle_ShouldUseRownumWrapper()
         {
             SQLDialectFactory.UseDialect("oracleconnection");
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s);
@@ -315,7 +315,7 @@ namespace EasySQL.Test
         public void InsertBuilder_ShouldGenerateCorrectInsert()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var user = new TestUserSchema();
+            var user = new TestUserTableDef();
             var insert = new InsertBuilder(user)
                 .Insert("Id", "Name", "Email")
                 .BuildSql("SELECT 1, 'test', 'test@test.com'");
@@ -328,7 +328,7 @@ namespace EasySQL.Test
         public void UpdateBuilder_ShouldGenerateCorrectUpdate()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var user = new TestUserSchema();
+            var user = new TestUserTableDef();
             var update = new UpdateBuilder(user)
                 .Set("Name", "@Name")
                 .Set("Status", 1)
@@ -345,7 +345,7 @@ namespace EasySQL.Test
         public void UpdateBuilder_NoWhere_ShouldPreventFullUpdate()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema();
+            var s = new TestUserTableDef();
             var ex = Assert.Throws<InvalidOperationException>(() =>
             {
                 new UpdateBuilder(s)
@@ -359,7 +359,7 @@ namespace EasySQL.Test
         public void DeleteBuilder_ShouldGenerateCorrectDelete()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var user = new TestUserSchema();
+            var user = new TestUserTableDef();
             var delete = new DeleteBuilder(user)
                 .Where("Id = @Id")
                 .BuildSql();
@@ -375,7 +375,7 @@ namespace EasySQL.Test
         public void Union_ShouldGenerateUnionClause()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select(s.GetName());
 
             var qb1 = new QueryBuilder().From(s)
@@ -397,7 +397,7 @@ namespace EasySQL.Test
         public void ParameterizedQuery_ShouldCollectParameters()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s)
@@ -416,7 +416,7 @@ namespace EasySQL.Test
         public void UpdateBuilder_Parameterized_ShouldCollectParameters()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var user = new TestUserSchema();
+            var user = new TestUserTableDef();
             var update = new UpdateBuilder(user)
                 .Set("Name", "@Name")
                 .Set("Status", "@Status")
@@ -468,8 +468,8 @@ namespace EasySQL.Test
         public void Exists_ShouldGenerateExistsClause()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
-            var sb = new TestOrderSchema("o");
+            var s = new TestUserTableDef("u");
+            var sb = new TestOrderTableDef("o");
             s.Select(s.GetName());
 
             var subQb = new QueryBuilder().From(sb)
@@ -490,7 +490,7 @@ namespace EasySQL.Test
         public void BuildTemplateSql_ShouldContainPlaceholders()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s);
@@ -507,7 +507,7 @@ namespace EasySQL.Test
         public void BuildTemplateSql_ShouldIgnoreStaticWhereAndOrderBy()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var s = new TestUserSchema("u");
+            var s = new TestUserTableDef("u");
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s)

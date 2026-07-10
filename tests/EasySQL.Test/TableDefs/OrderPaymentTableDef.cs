@@ -2,7 +2,7 @@ using EasySQL;
 
 namespace EasySQL.Test
 {
-    public class OrderPaymentSchema : SchemaBase
+    public class OrderPaymentTableDef : TableDefBase
     {
         public const string TABLE = "OrderPayments";
         public const string ID = "Id";
@@ -15,9 +15,9 @@ namespace EasySQL.Test
 
         public override string TableName => TABLE;
 
-        public OrderPaymentSchema(string alias, ISQLDialect? dialect) : base(alias, dialect) { }
-        public OrderPaymentSchema(string alias) : this(alias, null) { }
-        public OrderPaymentSchema() : this(string.Empty, null) { }
+        public OrderPaymentTableDef(string alias, ISQLDialect? dialect) : base(alias, dialect) { }
+        public OrderPaymentTableDef(string alias) : this(alias, null) { }
+        public OrderPaymentTableDef() : this(string.Empty, null) { }
 
         public string Id => ID;
         public string OrderId => ORDERID;

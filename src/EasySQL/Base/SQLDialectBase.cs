@@ -40,7 +40,7 @@ namespace EasySQL
         {
             string joinClause, tableName, alias;
             joinClause = string.Empty;
-            tableName = join.TargetSchema.TableName;
+            tableName = join.TargetTableDef.TableName;
             switch (join.JoinClass)
             {
                 case JoinType.Inner:
@@ -52,12 +52,12 @@ namespace EasySQL
                 case JoinType.Outer:
                     joinClause = "FULL OUTER JOIN "; break;
             }
-            if (!(join.TargetSchema is QueryBuilder))
+            if (!(join.TargetTableDef is QueryBuilder))
             {
                 //如果不是子查询，则需要进行Quote操作。
-                tableName = this.QuoteTable(join.TargetSchema.IsPartialTableName ? join.TargetSchema.PartialTableName : join.TargetSchema.TableName);
+                tableName = this.QuoteTable(join.TargetTableDef.IsPartialTableName ? join.TargetTableDef.PartialTableName : join.TargetTableDef.TableName);
             }
-            alias = (join.TargetSchema.Alias != null && join.TargetSchema.Alias.Trim().Length > 0) ?$" {join.TargetSchema.Alias.Trim()}" : string.Empty;
+            alias = (join.TargetTableDef.Alias != null && join.TargetTableDef.Alias.Trim().Length > 0) ?$" {join.TargetTableDef.Alias.Trim()}" : string.Empty;
             return $"{joinClause}{tableName}{alias} on {join.OnClause}";
         }
 

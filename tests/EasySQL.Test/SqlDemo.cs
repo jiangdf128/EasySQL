@@ -42,7 +42,7 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             Console.WriteLine("========== 基本 SELECT ==========");
 
-            var s = new DemoUserSchema("u");
+            var s = new DemoUserTableDef("u");
             s.Select(s.GetName());
             s.Select(s.GetEmail());
             var qb = new QueryBuilder().From(s);
@@ -65,8 +65,8 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             Console.WriteLine("========== JOIN 连接 ==========");
 
-            var s = new DemoUserSchema("u");
-            var sb = new DemoOrderSchema("o");
+            var s = new DemoUserTableDef("u");
+            var sb = new DemoOrderTableDef("o");
             s.Select(s.GetName());
             sb.Select(sb.GetAmount());
             s.Join(sb, "u.Id = o.UserId");
@@ -85,7 +85,7 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             Console.WriteLine("========== WHERE / GROUP BY / ORDER BY ==========");
 
-            var s = new DemoUserSchema("u");
+            var s = new DemoUserTableDef("u");
             s.Select(s.GetName());
             s.Select(s.GetEmail());
 
@@ -108,7 +108,7 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             Console.WriteLine("========== COUNT 计数 ==========");
 
-            var s = new DemoUserSchema("u");
+            var s = new DemoUserTableDef("u");
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s)
@@ -127,7 +127,7 @@ namespace EasySQL.Test
         {
             Console.WriteLine("========== 分页 ==========");
 
-            var s = new DemoUserSchema("u");
+            var s = new DemoUserTableDef("u");
             s.Select(s.GetName());
             s.Select(s.GetEmail());
 
@@ -167,7 +167,7 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             Console.WriteLine("========== INSERT / UPDATE / DELETE ==========");
 
-            var user = new DemoUserSchema();
+            var user = new DemoUserTableDef();
 
             var insert = new InsertBuilder(user)
                 .Insert("Id", "Name", "Email")
@@ -203,7 +203,7 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             Console.WriteLine("========== UNION ==========");
 
-            var s = new DemoUserSchema("u");
+            var s = new DemoUserTableDef("u");
             s.Select(s.GetName());
 
             var qb1 = new QueryBuilder().From(s).Where("u.Status = 1");
@@ -219,7 +219,7 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             Console.WriteLine("========== 参数化查询 ==========");
 
-            var s = new DemoUserSchema("u");
+            var s = new DemoUserTableDef("u");
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s)
@@ -257,8 +257,8 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             Console.WriteLine("========== EXISTS 子查询 ==========");
 
-            var s = new DemoUserSchema("u");
-            var sb = new DemoOrderSchema("o");
+            var s = new DemoUserTableDef("u");
+            var sb = new DemoOrderTableDef("o");
             s.Select(s.GetName());
 
             var subQb = new QueryBuilder().From(sb)
@@ -271,23 +271,23 @@ namespace EasySQL.Test
         }
     }
 
-    // 演示用的简短 Schema 类
-    class DemoUserSchema : SchemaBase
+    // 演示用的简短 TableDef 类
+    class DemoUserTableDef : TableDefBase
     {
         public const string TABLE = "Users";
         public override string TableName => TABLE;
-        public DemoUserSchema(string? alias = null, ISQLDialect? dialect = null) : base(alias ?? string.Empty, dialect) { }
+        public DemoUserTableDef(string? alias = null, ISQLDialect? dialect = null) : base(alias ?? string.Empty, dialect) { }
         public string GetId(bool p = true) => QuoteField("Id", p);
         public string GetName(bool p = true) => QuoteField("Name", p);
         public string GetEmail(bool p = true) => QuoteField("Email", p);
         public string GetStatus(bool p = true) => QuoteField("Status", p);
     }
 
-    class DemoOrderSchema : SchemaBase
+    class DemoOrderTableDef : TableDefBase
     {
         public const string TABLE = "Orders";
         public override string TableName => TABLE;
-        public DemoOrderSchema(string? alias = null, ISQLDialect? dialect = null) : base(alias ?? string.Empty, dialect) { }
+        public DemoOrderTableDef(string? alias = null, ISQLDialect? dialect = null) : base(alias ?? string.Empty, dialect) { }
         public string GetId(bool p = true) => QuoteField("Id", p);
         public string GetUserId(bool p = true) => QuoteField("UserId", p);
         public string GetAmount(bool p = true) => QuoteField("Amount", p);

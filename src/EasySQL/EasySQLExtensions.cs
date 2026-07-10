@@ -5,7 +5,7 @@ using System.Text;
 namespace EasySQL
 {
     /// <summary>
-    /// EasySQL 扩展方法集合，提供 <see cref="SchemaBase"/> 数组的快速查询入口
+    /// EasySQL 扩展方法集合，提供 <see cref="TableDefBase"/> 数组的快速查询入口
     /// 以及各类型的 IN 子句构造器快捷方法。
     /// </summary>
     public static class EasySQLExtensions
@@ -17,7 +17,7 @@ namespace EasySQL
         /// <param name="alias">可选别名。</param>
         /// <param name="dialect">可选 SQL 方言，为 null 时使用默认方言。</param>
         /// <returns>已配置 FROM 子句的 <see cref="QueryBuilder"/> 实例。</returns>
-        public static QueryBuilder Query(this SchemaBase[] tables, string? alias = null, ISQLDialect? dialect = null)
+        public static QueryBuilder Query(this TableDefBase[] tables, string? alias = null, ISQLDialect? dialect = null)
         {
             var qb = new QueryBuilder(alias, dialect);
             qb.From(tables);

@@ -24,7 +24,7 @@ namespace EasySQL
     ///     {
     ///         return await _db.DoAsync(async conn =>
     ///         {
-    ///             var s = new UserSchema("u");
+    ///             var s = new UserTableDef("u");
     ///             s.Select(true, s.GetName());
     ///             var qb = new QueryBuilder().From(s);
     ///             return await conn.QueryAsync&lt;User&gt;(qb.BuildSql());
@@ -129,7 +129,7 @@ namespace EasySQL
                 con.ChangeDatabase(databaseName);
             }
 
-            // 根据实际连接类型自动对齐全局方言，确保后续 Schema/QueryBuilder 使用正确的语法
+            // 根据实际连接类型自动对齐全局方言，确保后续 TableDef/QueryBuilder 使用正确的语法
             SQLDialectFactory.UseDialect(con);
 
             return con;

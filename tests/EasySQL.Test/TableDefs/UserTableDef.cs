@@ -2,7 +2,7 @@ using EasySQL;
 
 namespace EasySQL.Test
 {
-    public class UserSchema : SchemaBase
+    public class UserTableDef : TableDefBase
     {
         public const string TABLE = "Users";
         public const string ID = "Id";
@@ -15,9 +15,9 @@ namespace EasySQL.Test
 
         public override string TableName => TABLE;
 
-        public UserSchema(string alias, ISQLDialect? dialect) : base(alias, dialect) { }
-        public UserSchema(string alias) : this(alias, null) { }
-        public UserSchema() : this(string.Empty, null) { }
+        public UserTableDef(string alias, ISQLDialect? dialect) : base(alias, dialect) { }
+        public UserTableDef(string alias) : this(alias, null) { }
+        public UserTableDef() : this(string.Empty, null) { }
 
         public string Id => ID;
         public string UserName => USERNAME;
