@@ -30,10 +30,10 @@ namespace EasySQL
             var options = new EasySQLOptions();
             configure(options);
 
-            var context = new EasySQLContext();
-            context.Configure(options);
+            // 配置全局默认实例，DI 注入的 IEasySQLContext 即为 Default 单例
+            EasySQLContext.Default.Configure(options);
 
-            services.AddSingleton<IEasySQLContext>(context);
+            services.AddSingleton<IEasySQLContext>(EasySQLContext.Default);
 
             return services;
         }

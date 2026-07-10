@@ -8,9 +8,11 @@ namespace EasySQL.Test
 
         public TestBase()
         {
-            if (!DbContext.IsInitialized)
+            if (!EasySQLContext.Default.IsInitialized)
             {
-                DbContext.ConfigContext(new List<IDbProxy>() { (new PostgreSQLDbProxy()).Config("mytest", string.Format(connectString, "mytest")) });
+                var options = new EasySQLOptions();
+                options.AddDatabase(new PostgreSQLDbProxy().Config("mytest", string.Format(connectString, "mytest")));
+                EasySQLContext.Default.Configure(options);
             }
         }
     }
