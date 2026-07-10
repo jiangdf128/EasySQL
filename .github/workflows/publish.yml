@@ -38,23 +38,5 @@ jobs:
       - name: List package
         run: ls -la ./nupkgs/
 
-      - name: Check .NET version
-        run: dotnet --version
-
       - name: Publish to NuGet
-        run: |
-          echo "获取 OIDC token..."
-          OIDC_TOKEN=$(curl -sLS "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=api://AzureADTokenExchange" \
-            -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
-            -H "Accept: application/json; api-version=2.0" | jq -r '.value')
-          if [ -z "$OIDC_TOKEN" ] || [ "$OIDC_TOKEN" = "null" ]; then
-            echo "❌ 获取 token 失败，尝试无 audience..."
-            OIDC_TOKEN=$(curl -sLS "${ACTIONS_ID_TOKEN_REQUEST_URL}" \
-              -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
-              -H "Accept: application/json; api-version=2.0" | jq -r '.value')
-          fi
-          echo "Token 长度: ${#OIDC_TOKEN}"
-          dotnet nuget push ./nupkgs/*.nupkg \
-            --api-key "$OIDC_TOKEN" \
-            --source https://api.nuget.org/v3/index.json \
-            --skip-duplicate
+        run: dotnet nuget push ./nupkgs/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
