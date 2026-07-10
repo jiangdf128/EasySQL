@@ -2,7 +2,7 @@ using System.Text;
 namespace EasySQL
 {
     /// <summary>
-    /// IBM DB2 数据库方言实现。
+    /// IBM DB2 数据库方言实现（DB2 11.1+，支持 OFFSET/FETCH 标准语法）。
     /// </summary>
     public class DB2Dialect:SQLDialectBase
     {
@@ -26,8 +26,9 @@ namespace EasySQL
             if (forCount || isSubCount || rowLimit <= 0)
                 return sql.ToString();
 
-            // DB2 使用 FETCH FIRST 语法
-            sql.Append($" FETCH FIRST {rowLimit + rowOffset} ROWS ONLY");
+            // DB2 11.1+ 支持与 SQL Server / Oracle 相同的 OFFSET/FETCH 标准语法
+            sql.Append(string.Format("{0}OFFSET {1} ROWS FETCH NEXT {2} ROWS ONLY",
+                readable ? System.Environment.NewLine : " ", rowOffset, rowLimit));
             return sql.ToString();
         }
     }

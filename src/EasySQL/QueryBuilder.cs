@@ -68,6 +68,12 @@ namespace EasySQL
         internal bool IsSubCount => _isSubCount;
 
         /// <summary>
+        /// 分页查询时自动注入的计数列别名。调用 <see cref="BuildSql(int, int)"/> 分页时，
+        /// SQL 中会追加 <c>COUNT(*) OVER() AS TotalRows</c>，调用方可从返回结果第一行读取该列获取总记录数。
+        /// </summary>
+        public const string PagingTotalAlias = "TotalRows";
+
+        /// <summary>
         /// 是否需要对构造返回的Sql语句节使用换行，以提高可读性。
         /// </summary>
         public bool PrettyPrint { get; set; }
@@ -204,7 +210,7 @@ namespace EasySQL
         /// <param name="value">参数值。</param>
         public QueryBuilder AddParameter(string name, object value)
         {
-            Parameters[name] = value;
+            lock (_lock) { Parameters[name] = value; }
             return this;
         }
 
@@ -216,8 +222,11 @@ namespace EasySQL
         {
             if (parameters != null)
             {
-                foreach (var kv in parameters)
-                    Parameters[kv.Key] = kv.Value;
+                lock (_lock)
+                {
+                    foreach (var kv in parameters)
+                        Parameters[kv.Key] = kv.Value;
+                }
             }
             return this;
         }

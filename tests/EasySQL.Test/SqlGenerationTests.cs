@@ -555,7 +555,6 @@ namespace EasySQL.Test
             Assert.Equal(DialectType.PostgreSQL, new PostgreSQLDialect().DialectType);
             Assert.Equal(DialectType.Oracle, new OracleDialect().DialectType);
             Assert.Equal(DialectType.SQLite, new SQLiteDialect().DialectType);
-            Assert.Equal(DialectType.Jet, new JetDialect().DialectType);
             Assert.Equal(DialectType.DB2, new DB2Dialect().DialectType);
         }
     }

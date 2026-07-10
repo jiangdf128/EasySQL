@@ -43,11 +43,8 @@ namespace EasySQL
     public class EasySQLContext : IEasySQLContext
     {
         /// <summary>
-        /// 全局默认上下文单例。静态 API <see cref="DbContext"/> 内部委托到此实例。
-        /// </summary>
-        /// <summary>
         /// 全局默认上下文单例。非 DI 场景直接使用 <c>EasySQLContext.Default.Open(...)</c> 即可操作数据库。
-        /// DI 场景中，<see cref="AddEasySQL"/> 也会将此实例注册到容器。
+        /// DI 场景中，<see cref="EasySQLServiceExtensions.AddEasySQL"/> 也会将此实例注册到容器。
         /// </summary>
         public static readonly EasySQLContext Default = new();
 
@@ -215,7 +212,6 @@ namespace EasySQL
             DialectType.PostgreSQL => "npgsqlconnection",
             DialectType.Oracle => "oracleconnection",
             DialectType.SQLite => "sqliteconnection",
-            DialectType.Jet => "oledbconnection",
             DialectType.DB2 => "db2connection",
             _ => "sqlconnection"
         };

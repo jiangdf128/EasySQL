@@ -29,7 +29,7 @@ namespace EasySQL
                 return sql.ToString();
 
             // SQL Server 分页需要 ORDER BY，若无则追加常量排序
-            bool hasOrderBy = sql.ToString().Contains("ORDER BY");
+            bool hasOrderBy = sql.ToString().Contains("ORDER BY ");
             if (!hasOrderBy)
             {
                 sql.Append(string.Format("{0}ORDER BY 1 ", readable ? System.Environment.NewLine : " "));

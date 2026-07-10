@@ -140,11 +140,11 @@ namespace EasySQL.Test
             su.Select(su.GetName());
             su.Select(su.GetEmail());
 
-            // SQL Server
+            // SQL Server（含 COUNT OVER，一次查询返回数据+总数）
             SQLDialectFactory.UseSqlServerDialect();
             var qb1 = new QueryBuilder().From(su).OrderBy("u.Name ASC");
             qb1.PrettyPrint = false;
-            Print("SQL Server (OFFSET/FETCH)", qb1.BuildSql(rowLimit: 10, rowOffset: 5));
+            Print($"SQL Server (含 {QueryBuilder.PagingTotalAlias} 计数列)", qb1.BuildSql(rowLimit: 10, rowOffset: 5));
 
             // MySQL
             SQLDialectFactory.UseDialect("mysqlconnection");
@@ -170,17 +170,11 @@ namespace EasySQL.Test
             qb5.PrettyPrint = false;
             Print("SQLite (LIMIT/OFFSET)", qb5.BuildSql(rowLimit: 15, rowOffset: 0));
 
-            // Jet (MS Access)
-            SQLDialectFactory.UseDialect("oledbconnection");
-            var qb6 = new QueryBuilder().From(su);
-            qb6.PrettyPrint = false;
-            Print("Jet / MS Access (TOP)", qb6.BuildSql(rowLimit: 10, rowOffset: 0));
-
             // DB2
             SQLDialectFactory.UseDialect("db2connection");
-            var qb7 = new QueryBuilder().From(su);
-            qb7.PrettyPrint = false;
-            Print("DB2 (FETCH FIRST)", qb7.BuildSql(rowLimit: 10, rowOffset: 0));
+            var qb6 = new QueryBuilder().From(su);
+            qb6.PrettyPrint = false;
+            Print("DB2 (OFFSET/FETCH)", qb6.BuildSql(rowLimit: 10, rowOffset: 5));
         }
 
         static void DemoInsertUpdateDelete()

@@ -58,7 +58,7 @@ namespace EasySQL
                 tableName = this.QuoteTable(join.TargetSchema.IsPartialTableName ? join.TargetSchema.PartialTableName : join.TargetSchema.TableName);
             }
             alias = (join.TargetSchema.Alias != null && join.TargetSchema.Alias.Trim().Length > 0) ?$" {join.TargetSchema.Alias.Trim()}" : string.Empty;
-            return (this.DialectType == DialectType.Jet) ? $"{joinClause}{tableName}{alias} on ({join.OnClause})" : $"{joinClause}{tableName}{alias} on {join.OnClause}";
+            return $"{joinClause}{tableName}{alias} on {join.OnClause}";
         }
 
         /// <summary>
@@ -111,39 +111,20 @@ namespace EasySQL
 
         #region 分页支持
 
-
-        private const string fmtRowLimit = " LIMIT {0}";
-        private const string fmtRowOffset = " OFFSET {0}";
-
-
-
-
-
         /// <summary>
-        /// This method returns the SQL string for restricting the number of rows if a limit
-        /// has been specified and the empty string otherwise.
+        /// 返回限制行数的 SQL 片段。rowLimit > 0 时返回 " LIMIT n"，否则返回空字符串。
         /// </summary>
-        /// <returns>A fragment for use in an sql statement.</returns>
-
-        /// <summary>
-        /// This method returns the SQL string for restricting the number of rows if a limit
-        /// has been specified and the empty string otherwise.
-        /// </summary>
-        /// <returns>A fragment for use in an sql statement.</returns>
         protected virtual string GetRowLimit(int rowLimit)
         {
-            return rowLimit > 0 ? String.Format(fmtRowLimit, rowLimit) : "";
+            return rowLimit > 0 ? $" LIMIT {rowLimit}" : "";
         }
 
         /// <summary>
-        /// This method returns the SQL string for skipping past a number of rows. This is useful
-        /// in combination with RowLimit for paging of data.
+        /// 返回偏移行数的 SQL 片段。rowLimit > 0 或 rowOffset > 0 时返回 " OFFSET n"。
         /// </summary>
-        /// <returns>A fragment for use in an sql statement.</returns>
         protected virtual string GetRowOffset(int rowLimit, int rowOffset)
         {
-            // always include offset if a row limit is applied (required for paging)
-            return rowLimit > 0 || rowOffset > 0 ? String.Format(fmtRowOffset, rowOffset) : "";
+            return rowLimit > 0 || rowOffset > 0 ? $" OFFSET {rowOffset}" : "";
         }
 
         #endregion
@@ -160,7 +141,7 @@ namespace EasySQL
 
             if (forCount)
             {
-                if (qb.IsDistinct && qb.FromItems[0].SelectFields.Count > 0)
+                if (qb.IsDistinct && qb.FromItems.Count > 0 && qb.FromItems[0].SelectFields.Count > 0)
                 {
                     string field = qb.FromItems[0].SelectFields[0];
                     int idx = field.LastIndexOf(" AS ");
@@ -210,6 +191,12 @@ namespace EasySQL
                         }
                     }
                 }
+            }
+
+            // 分页时自动注入 COUNT(*) OVER() 列，一次查询同时返回数据与总记录数
+            if (rowLimit > 0 && !forCount && !qb.IsSubCount && selectBuilder.Length > 0)
+            {
+                selectBuilder.Append($",COUNT(*) OVER() AS {QueryBuilder.PagingTotalAlias}");
             }
 
             fromBuilder.Append(fromItem.ToString());

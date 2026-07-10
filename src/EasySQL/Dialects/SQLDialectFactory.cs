@@ -19,7 +19,6 @@ namespace EasySQL
         private const string sqliteconnection = "sqliteconnection";
         private const string mysqlconnection = "mysqlconnection";
         private const string oracleconnection = "oracleconnection";
-        private const string oledbconnection = "oledbconnection";
         private const string db2connection = "db2connection";
 
         private static readonly Dictionary<string, ISQLDialect> dialectDictionary
@@ -31,7 +30,6 @@ namespace EasySQL
                 [sqliteconnection] = new SQLiteDialect(),
                 [mysqlconnection] = new MySQLDialect(),
                 [oracleconnection] = new OracleDialect(),
-                [oledbconnection] = new JetDialect(),
                 [db2connection] = new DB2Dialect()
             };
 

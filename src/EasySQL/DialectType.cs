@@ -15,8 +15,6 @@ namespace EasySQL
         Oracle,
         /// <summary>SQLite</summary>
         SQLite,
-        /// <summary>MS Access（Jet 引擎）</summary>
-        Jet,
         /// <summary>IBM DB2</summary>
         DB2
     }
