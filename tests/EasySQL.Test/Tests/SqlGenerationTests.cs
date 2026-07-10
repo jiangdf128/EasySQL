@@ -126,7 +126,7 @@ namespace EasySQL.Test
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s)
-                .Where("u.Status = 1", "u.Email IS NOT NULL");
+                .Where($"{s.GetStatus()} = 1", $"{s.GetEmail()} IS NOT NULL");
 
             var sql = qb.BuildSql();
             LogSql(sql);
@@ -142,7 +142,7 @@ namespace EasySQL.Test
             s.SelectExpression("Count(1) AS Cnt");
 
             var qb = new QueryBuilder().From(s)
-                .GroupBy("u.Status")
+                .GroupBy(s.GetStatus())
                 .Having("Count(1) > 5");
 
             var sql = qb.BuildSql();
@@ -159,7 +159,7 @@ namespace EasySQL.Test
             s.Select(true, s.Name, s.Email);
 
             var qb = new QueryBuilder().From(s)
-                .OrderBy("u.Name ASC", "u.Email DESC");
+                .OrderBy($"{s.GetName()} ASC", $"{s.GetEmail()} DESC");
 
             var sql = qb.BuildSql();
             LogSql(sql);
@@ -177,7 +177,7 @@ namespace EasySQL.Test
             var sb = new TestOrderTableDef("o");
             s.Select(s.GetName());
             sb.Select(sb.GetAmount());
-            s.Join(sb, "u.Id = o.UserId");
+            s.Join(sb, $"{s.GetId()} = {sb.GetUserId()}");
 
             var qb = new QueryBuilder().From(s);
 
@@ -194,7 +194,7 @@ namespace EasySQL.Test
             var sb = new TestOrderTableDef("o");
             s.Select(s.GetName());
             sb.Select(sb.GetAmount());
-            s.LeftJoin(sb, "u.Id=o.UserId");
+            s.LeftJoin(sb, $"{s.GetId()}={sb.GetUserId()}");
 
             var qb = new QueryBuilder().From(s);
 
@@ -214,12 +214,12 @@ namespace EasySQL.Test
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s)
-                .Where("u.Status = 1");
+                .Where($"{s.GetStatus()} = 1");
 
             var sql = qb.BuildCountSql();
             LogSql(sql);
             Assert.Contains("Count(1) AS RowsCount", sql);
-            Assert.DoesNotContain("u.Name", sql); // SELECT 字段被替换为计数
+            Assert.DoesNotContain(s.GetName(false), sql); // SELECT 字段被替换为计数
         }
 
         [Fact]
@@ -231,7 +231,7 @@ namespace EasySQL.Test
             s.SelectExpression("Count(1) AS Cnt");
 
             var qb = new QueryBuilder().From(s)
-                .GroupBy("u.Status");
+                .GroupBy(s.GetStatus());
 
             var sql = qb.BuildCountSql();
             LogSql(sql);
@@ -249,7 +249,7 @@ namespace EasySQL.Test
             s.Select(true, s.Name, s.Email);
 
             var qb = new QueryBuilder().From(s)
-                .OrderBy("u.Name ASC");
+                .OrderBy($"{s.GetName()} ASC");
 
             var sql = qb.BuildSql(rowLimit: 10, rowOffset: 5);
             LogSql(sql);
@@ -331,7 +331,7 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             var user = new TestUserTableDef();
             var insert = new InsertBuilder(user)
-                .Insert("Id", "Name", "Email")
+                .Insert(user.Id, user.Name, user.Email)
                 .BuildSql("SELECT 1, 'test', 'test@test.com'");
             LogSql(insert);
             Assert.Contains("INSERT INTO Users", insert);
@@ -346,7 +346,7 @@ namespace EasySQL.Test
             var update = new UpdateBuilder(user)
                 .Set("Name", "@Name")
                 .Set("Status", 1)
-                .Where("Id = @Id")
+                .Where($"{user.GetId()} = {user.AsParam("Id")}")
                 .BuildSql();
             LogSql(update);
             Assert.Contains("UPDATE Users SET", update);
@@ -375,7 +375,7 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             var user = new TestUserTableDef();
             var delete = new DeleteBuilder(user)
-                .Where("Id = @Id")
+                .Where($"{user.GetId()} = {user.AsParam("Id")}")
                 .BuildSql();
             LogSql(delete);
             Assert.Contains("DELETE FROM Users", delete);
@@ -393,10 +393,10 @@ namespace EasySQL.Test
             s.Select(s.GetName());
 
             var qb1 = new QueryBuilder().From(s)
-                .Where("u.Status = 1");
+                .Where($"{s.GetStatus()} = 1");
 
             var qb2 = new QueryBuilder().From(s)
-                .Where("u.Status = 2");
+                .Where($"{s.GetStatus()} = 2");
 
             qb1.Union(qb2, isUnionAll: true);
             var sql = qb1.BuildSql();
@@ -415,7 +415,7 @@ namespace EasySQL.Test
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s)
-                .Where("u.Id = @UserId", "u.Status = @Status")
+                .Where($"{s.GetId()} = {s.AsParam("UserId")}", $"{s.GetStatus()} = {s.AsParam("Status")}")
                 .AddParameter("UserId", 123)
                 .AddParameter("Status", 1);
             
@@ -434,7 +434,7 @@ namespace EasySQL.Test
             var update = new UpdateBuilder(user)
                 .Set("Name", "@Name")
                 .Set("Status", "@Status")
-                .Where("Id = @Id")
+                .Where($"{user.GetId()} = {user.AsParam("Id")}")
                 .AddParameter("Name", "test")
                 .AddParameter("Status", 1)
                 .AddParameter("Id", 10);
@@ -487,7 +487,7 @@ namespace EasySQL.Test
             s.Select(s.GetName());
 
             var subQb = new QueryBuilder().From(sb)
-                .Where("o.UserId = u.Id");
+                .Where($"{sb.GetUserId()} = {s.GetId()}");
 
             var qb = new QueryBuilder().From(s)
                 .Exists(subQb);
@@ -525,8 +525,8 @@ namespace EasySQL.Test
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s)
-                .Where("u.Status = 1")
-                .OrderBy("u.Name ASC");
+                .Where($"{s.GetStatus()} = 1")
+                .OrderBy($"{s.GetName()} ASC");
 
             var sql = qb.BuildTemplateSql();
             LogSql(sql);
@@ -535,7 +535,7 @@ namespace EasySQL.Test
             Assert.Contains("/**where**/", sql);
             Assert.Contains("/**orderby**/", sql);
             Assert.DoesNotContain("Status", sql);
-            Assert.DoesNotContain("u.Name ASC", sql);
+            Assert.DoesNotContain($"{s.GetName()} ASC", sql);
         }
 
         // ================================================================

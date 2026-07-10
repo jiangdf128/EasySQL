@@ -69,13 +69,13 @@ namespace EasySQL.Test
             var sb = new DemoOrderTableDef("o");
             s.Select(s.GetName());
             sb.Select(sb.GetAmount());
-            s.Join(sb, "u.Id = o.UserId");
+            s.Join(sb, $"{s.GetId()} = {sb.GetUserId()}");
 
             var qb = new QueryBuilder().From(s);
             Print("INNER JOIN", qb.BuildSql());
 
             s.ClearJoins();
-            s.LeftJoin(sb, "u.Id = o.UserId");
+            s.LeftJoin(sb, $"{s.GetId()} = {sb.GetUserId()}");
             var qb2 = new QueryBuilder().From(s);
             Print("LEFT JOIN", qb2.BuildSql());
         }
@@ -89,15 +89,15 @@ namespace EasySQL.Test
             s.Select(true, s.Name, s.Email);
 
             var qb = new QueryBuilder().From(s)
-                .Where("u.Status = 1", "u.Email IS NOT NULL")
-                .OrderBy("u.Name ASC");
+                .Where($"{s.GetStatus()} = 1", $"{s.GetEmail()} IS NOT NULL")
+                .OrderBy($"{s.GetName()} ASC");
             Print("条件 + 排序", qb.BuildSql());
 
             s.ClearSelect();
             s.Select(s.GetStatus());
             s.SelectExpression("Count(1) AS Cnt");
             var qb2 = new QueryBuilder().From(s)
-                .GroupBy("u.Status")
+                .GroupBy(s.GetStatus())
                 .Having("Count(1) > 5");
             Print("分组 + Having", qb2.BuildSql());
         }
@@ -111,14 +111,14 @@ namespace EasySQL.Test
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s)
-                .Where("u.Status = 1");
+                .Where($"{s.GetStatus()} = 1");
             Print("无分组 COUNT", qb.BuildCountSql());
 
             s.ClearSelect();
             s.Select(s.GetStatus());
             s.SelectExpression("Count(1) AS Cnt");
             var qb2 = new QueryBuilder().From(s)
-                .GroupBy("u.Status");
+                .GroupBy(s.GetStatus());
             Print("有分组 COUNT（子查询包装）", qb2.BuildCountSql());
         }
 
@@ -131,7 +131,7 @@ namespace EasySQL.Test
 
             // SQL Server（含 COUNT OVER，一次查询返回数据+总数）
             SQLDialectFactory.UseSqlServerDialect();
-            var qb1 = new QueryBuilder().From(s).OrderBy("u.Name ASC");
+            var qb1 = new QueryBuilder().From(s).OrderBy($"{s.GetName()} ASC");
             Print($"SQL Server (含 {QueryBuilder.PagingTotalAlias} 计数列)", qb1.BuildSql(rowLimit: 10, rowOffset: 5));
 
             // MySQL
@@ -168,19 +168,19 @@ namespace EasySQL.Test
             var user = new DemoUserTableDef();
 
             var insert = new InsertBuilder(user)
-                .Insert("Id", "Name", "Email")
+                .Insert(user.Id, user.Name, user.Email)
                 .BuildSql("SELECT 1, 'test', 'test@test.com'");
             Print("INSERT", insert);
 
             var update = new UpdateBuilder(user)
-                .Set("Name", "@Name")
-                .Set("Status", 1)
-                .Where("Id = @Id")
+                .Set(user.Name, user.AsParam("Name"))
+                .Set(user.Status, 1)
+                .Where($"{user.GetId()} = {user.AsParam("Id")}")
                 .BuildSql();
             Print("UPDATE", update);
 
             var delete = new DeleteBuilder(user)
-                .Where("Id = @Id")
+                .Where($"{user.GetId()} = {user.AsParam("Id")}")
                 .BuildSql();
             Print("DELETE", delete);
 
@@ -204,9 +204,9 @@ namespace EasySQL.Test
             var s = new DemoUserTableDef("u");
             s.Select(s.GetName());
 
-            var qb1 = new QueryBuilder().From(s).Where("u.Status = 1");
+            var qb1 = new QueryBuilder().From(s).Where($"{s.GetStatus()} = 1");
 
-            var qb2 = new QueryBuilder().From(s).Where("u.Status = 2");
+            var qb2 = new QueryBuilder().From(s).Where($"{s.GetStatus()} = 2");
 
             qb1.Union(qb2, isUnionAll: true);
             Print("UNION ALL", qb1.BuildSql());
@@ -221,7 +221,7 @@ namespace EasySQL.Test
             s.Select(s.GetName());
 
             var qb = new QueryBuilder().From(s)
-                .Where("u.Id = @UserId", "u.Status = @Status")
+                .Where($"{s.GetId()} = {s.AsParam("UserId")}", $"{s.GetStatus()} = {s.AsParam("Status")}")
                 .AddParameter("UserId", 123)
                 .AddParameter("Status", 1);
 
@@ -260,7 +260,7 @@ namespace EasySQL.Test
             s.Select(s.GetName());
 
             var subQb = new QueryBuilder().From(sb)
-                .Where("o.UserId = u.Id");
+                .Where($"{sb.GetUserId()} = {s.GetId()}");
 
             var qb = new QueryBuilder().From(s)
                 .Exists(subQb);
