@@ -39,4 +39,4 @@ jobs:
         run: ls -la ./nupkgs/
 
       - name: Publish to NuGet
-        run: dotnet nuget push ./nupkgs/*.nupkg --skip-duplicate --source https://api.nuget.org/v3/index.json
+        run: dotnet nuget push ./nupkgs/*.nupkg --source https://api.nuget.org/v3/index.json 2>&1
