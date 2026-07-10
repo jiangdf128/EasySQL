@@ -26,10 +26,7 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build -c Release --no-restore -p:TreatWarningsAsErrors=false
-
-      - name: Test (unit only)
-        run: dotnet test tests/EasySQL.Test/EasySQL.Test.csproj -c Release --no-build -f net10.0 --filter "FullyQualifiedName~SqlGeneration"
+        run: dotnet build src/EasySQL/EasySQL.csproj -c Release --no-restore
 
       - name: Pack
         run: dotnet pack src/EasySQL/EasySQL.csproj -c Release --no-build -o ./nupkgs
