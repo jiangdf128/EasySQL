@@ -2,6 +2,12 @@
 
 此文件为 Claude Code（claude.ai/code）提供在此仓库中工作的指导。
 
+## 安装
+
+```bash
+dotnet add package EasySQL.SqlBuilder
+```
+
 ## 构建和测试
 
 ```bash
