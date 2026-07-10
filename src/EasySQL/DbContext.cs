@@ -22,12 +22,12 @@ namespace EasySQL
         /// <summary>
         /// 默认数据库。
         /// </summary>
-        static IDbProxy defaultDb = null;
+        static IDbProxy? defaultDb = null;
 
         /// <summary>
         /// 事务错误全局日志。
         /// </summary>
-        public static Action<Exception,IDbConnection> LogTransactionError { get;set;}
+        public static Action<Exception,IDbConnection>? LogTransactionError { get;set;}
 
         /// <summary>
         /// 获取是否进行配置初始化。
@@ -66,7 +66,7 @@ namespace EasySQL
         /// <param name="databaseId">数据库ID</param>
         /// <param name="databaseName">数据库名称。</param>
         /// <returns></returns>
-        public static IDbConnection Open(string databaseId = null,string databaseName=null)
+        public static IDbConnection Open(string? databaseId = null, string? databaseName=null)
         {
             IDbConnection con;
             if (string.IsNullOrWhiteSpace(databaseId)){
@@ -145,7 +145,7 @@ namespace EasySQL
         /// <param name="action">数据处理函数。</param>
         /// <param name="databaseId">数据库ID</param>
         /// <param name="databaseName">数据库名称。</param>
-        public static void Do(Action<IDbConnection> action, string databaseId = null, string databaseName = null)
+        public static void Do(Action<IDbConnection> action, string? databaseId = null, string? databaseName = null)
         {
             using (var db = DbContext.Open(databaseId,databaseName)) {
                 action(db);
@@ -159,7 +159,7 @@ namespace EasySQL
         /// <param name="databaseId">数据库ID</param>
         /// <param name="databaseName">数据库名称。</param>
         /// <returns></returns>
-        public static async Task DoAsync(Func<IDbConnection, Task> action, string databaseId = null, string databaseName = null)
+        public static async Task DoAsync(Func<IDbConnection, Task> action, string? databaseId = null, string? databaseName = null)
         {
             using (var db = DbContext.Open(databaseId,databaseName)) {
                 await action(db);
@@ -173,7 +173,7 @@ namespace EasySQL
         /// <param name="databaseId">数据库ID</param>
         /// <param name="databaseName">数据库名称。</param>
         /// <param name="il"></param>
-        public static void DoTransaction(Func<IDbConnection, IDbTransaction, bool> action, string databaseId = null, string databaseName = null, IsolationLevel il = IsolationLevel.Unspecified)
+        public static void DoTransaction(Func<IDbConnection, IDbTransaction, bool> action, string? databaseId = null, string? databaseName = null, IsolationLevel il = IsolationLevel.Unspecified)
         {
             using (var db = DbContext.Open(databaseId, databaseName)) {
                 db.DoTransaction(tran =>
@@ -191,7 +191,7 @@ namespace EasySQL
         /// <param name="databaseName">数据库名称。</param>
         /// <param name="il"></param>
         /// <returns></returns>
-        public static async Task DoTransactionAsync(Func<IDbConnection, IDbTransaction, Task<bool>> action, string databaseId = null, string databaseName = null, IsolationLevel il = IsolationLevel.Unspecified)
+        public static async Task DoTransactionAsync(Func<IDbConnection, IDbTransaction, Task<bool>> action, string? databaseId = null, string? databaseName = null, IsolationLevel il = IsolationLevel.Unspecified)
         {
             using (var db = DbContext.Open(databaseId, databaseName)) {
                 await db.DoTransactionAsync(async tran =>

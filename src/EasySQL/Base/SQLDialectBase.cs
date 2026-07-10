@@ -12,6 +12,16 @@ namespace EasySQL
     public abstract class SQLDialectBase : ISQLDialect
     {
         /// <summary>
+        /// 获取数据库方言类型。
+        /// </summary>
+        public abstract DialectType DialectType { get; }
+
+        /// <summary>
+        /// 获取参数化查询的参数前缀符，默认 @。Oracle 覆写为 :。
+        /// </summary>
+        public virtual string ParameterPrefix => "@";
+
+        /// <summary>
         /// 获取数据库方言名称，如 "SQLServer"、"MySQL"、"PostgreSQL" 等。
         /// </summary>
         public abstract string DialectName { get; }
@@ -48,7 +58,7 @@ namespace EasySQL
                 tableName = this.QuoteTable(join.TargetSchema.IsPartialTableName ? join.TargetSchema.PartialTableName : join.TargetSchema.TableName);
             }
             alias = (join.TargetSchema.Alias != null && join.TargetSchema.Alias.Trim().Length > 0) ?$" {join.TargetSchema.Alias.Trim()}" : string.Empty;
-            return (this.DialectName == "Jet") ? $"{joinClause}{tableName}{alias} on ({join.OnClause})" : $"{joinClause}{tableName}{alias} on {join.OnClause}";
+            return (this.DialectType == DialectType.Jet) ? $"{joinClause}{tableName}{alias} on ({join.OnClause})" : $"{joinClause}{tableName}{alias} on {join.OnClause}";
         }
 
         /// <summary>
@@ -101,35 +111,19 @@ namespace EasySQL
 
         #region 分页支持
 
-        // various internally used strings
-        private const string fmtTop = "TOP {0} ";
 
         private const string fmtRowLimit = " LIMIT {0}";
         private const string fmtRowOffset = " OFFSET {0}";
 
-        // {0} = 原SQL查询。
-        // {2} = rowLimit + rowOffest, {1} = rowOffset
-        private const string fmtOracleLimit = "SELECT * FROM ({0}) WHERE r>{1} and r<={2}";
 
-        // Uwe Kitzmann: change template to support Sybase ASA dialect of paged queries
-        private const string fmtSybaseASALimit = " TOP {0} ";
-        private const string fmtSybaseASAOffset = " START AT {0} ";
 
-        // Firebird
-        private const string fmtFirebirdLimit = " FIRST {0} ";
-        private const string fmtFirebirdOffset = " SKIP {0} ";
 
-        private const string fmtDb2Limit = " FETCH FIRST {0} ROWS ONLY ";
 
         /// <summary>
         /// This method returns the SQL string for restricting the number of rows if a limit
         /// has been specified and the empty string otherwise.
         /// </summary>
         /// <returns>A fragment for use in an sql statement.</returns>
-        protected virtual string GetTopLimit(int rowLimit)
-        {
-            return rowLimit > 0 ? String.Format(fmtTop, rowLimit) : "";
-        }
 
         /// <summary>
         /// This method returns the SQL string for restricting the number of rows if a limit
@@ -155,29 +149,19 @@ namespace EasySQL
         #endregion
 
         /// <summary>
-        /// 构建完整的 SQL 查询语句。
-        /// 包含 SELECT、FROM、JOIN、WHERE、GROUP BY、HAVING、ORDER BY 及分页子句的生成。
+        /// 构建完整的 SQL 查询语句（不含分页）。分页逻辑由 <see cref="ApplyPaging"/> 处理。
         /// </summary>
-        /// <param name="qb">查询构建器实例。</param>
-        /// <param name="rowLimit">返回记录数上限，0 表示不限制。</param>
-        /// <param name="rowOffset">偏移行数，从 0 开始。</param>
-        /// <param name="forCount">是否生成 COUNT 计数语句。</param>
-        /// <returns>完整的 SQL 查询语句字符串。</returns>
         public virtual string BuildSql(QueryBuilder qb, int rowLimit, int rowOffset, bool forCount)
         {
             StringBuilder selectBuilder = new StringBuilder((!qb.IsDistinct || forCount) ? "SELECT " : "SELECT DISTINCT ");
-            StringBuilder fromBuilder = new StringBuilder(string.Format("{0}FROM ", qb.Readable ? System.Environment.NewLine : " "));
+            StringBuilder fromBuilder = new StringBuilder(string.Format("{0}FROM ", qb.PrettyPrint ? System.Environment.NewLine : " "));
             StringBuilder fromItem = new StringBuilder();
             StringBuilder sqlbuilder = new StringBuilder();
-            bool handleLimit = false;
 
             if (forCount)
             {
                 if (qb.IsDistinct && qb.FromItems[0].SelectFields.Count > 0)
                 {
-                    //如果是Distinct开头的SQL语句，则计数也需要使用Disintct，但必需有主键。
-                    //为了配合自动分页功能，因此默认以第一个表的第一列作为主键。蒋德福 2012-12-21。
-                    //这样做，程序员必需清楚，第一列必需传入主键。
                     string field = qb.FromItems[0].SelectFields[0];
                     int idx = field.LastIndexOf(" AS ");
                     if (idx >= 0)
@@ -188,7 +172,6 @@ namespace EasySQL
                 }
                 else
                 {
-                    //翻译成Count语句，否则将翻译成非Count语句。
                     selectBuilder.Append("Count(1) AS RowsCount");
                 }
             }
@@ -196,34 +179,6 @@ namespace EasySQL
             if (qb.IsSubCount)
             {
                 selectBuilder.Append("1 AS r");
-            }
-
-            //添加分页支持功能（SQLServere，Jet，FireBird，SysbaseASA）。
-            if (!qb.IsSubCount && !forCount && rowLimit > 0)
-            {
-                // SQL Server and MS Access
-                if (qb.SQLDialect.DialectName == "SQLServer")
-                {
-                    handleLimit = true;
-                }
-                else if (qb.SQLDialect.DialectName == "Jet")
-                {
-                    selectBuilder.Append(this.GetTopLimit(rowLimit + rowOffset));
-                    handleLimit = true;
-                }
-                else if (qb.SQLDialect.DialectName.Equals("Firebird"))
-                {
-                    selectBuilder.Append(String.Format(fmtFirebirdLimit, rowLimit));
-                    selectBuilder.Append(String.Format(fmtFirebirdOffset, rowOffset));
-                    handleLimit = true;
-                }
-                // Uwe Kitzmann: Support for Sybase ASA
-                else if (qb.SQLDialect.DialectName.StartsWith("SybaseASA"))
-                {
-                    selectBuilder.Append(String.Format(fmtSybaseASALimit, rowLimit));
-                    selectBuilder.Append(String.Format(fmtSybaseASAOffset, rowOffset));
-                    handleLimit = true;
-                }
             }
 
             for (int i = 0, idx1 = 0; i < qb.FromItems.Count; i++)
@@ -247,7 +202,7 @@ namespace EasySQL
                 {
                     fromItem.Append(" ");
                     fromItem.Append(qb.FromItems[i].GetJoinClause(out brks));
-                    if (qb.SQLDialect.IsBracketJoin)
+                    if (qb.SQLDialect!.IsBracketJoin)
                     {
                         for (int j = 0; j < brks; j++)
                         {
@@ -262,7 +217,7 @@ namespace EasySQL
             string existsWhere = qb.GetExistsWhere();
             if (qb.Wherebuilder != null && qb.Wherebuilder.Length > 0)
             {
-                sqlbuilder.Append(string.Format("{0}WHERE (", qb.Readable ? System.Environment.NewLine : " "));
+                sqlbuilder.Append(string.Format("{0}WHERE (", qb.PrettyPrint ? System.Environment.NewLine : " "));
                 sqlbuilder.Append(qb.Wherebuilder.ToString());
                 sqlbuilder.Append(")");
                 if (existsWhere.Length > 0)
@@ -275,66 +230,51 @@ namespace EasySQL
             {
                 if (existsWhere.Length > 0)
                 {
-                    sqlbuilder.Append(string.Format("{0}WHERE {1}", qb.Readable ? System.Environment.NewLine : " ", existsWhere));
+                    sqlbuilder.Append(string.Format("{0}WHERE {1}", qb.PrettyPrint ? System.Environment.NewLine : " ", existsWhere));
                 }
             }
 
             if (qb.Groupbybuilder != null && qb.Groupbybuilder.Length > 0)
             {
-                sqlbuilder.Append(string.Format("{0}GROUP BY ", qb.Readable ? System.Environment.NewLine : " "));
+                sqlbuilder.Append(string.Format("{0}GROUP BY ", qb.PrettyPrint ? System.Environment.NewLine : " "));
                 sqlbuilder.Append(qb.Groupbybuilder.ToString());
             }
 
             if (qb.Havingbuilder != null && qb.Havingbuilder.Length > 0)
             {
-                sqlbuilder.Append(string.Format("{0}HAVING ", qb.Readable ? System.Environment.NewLine : " "));
+                sqlbuilder.Append(string.Format("{0}HAVING ", qb.PrettyPrint ? System.Environment.NewLine : " "));
                 sqlbuilder.Append(qb.Havingbuilder.ToString());
             }
 
             if (qb.Orderbybuilder != null && qb.Orderbybuilder.Length > 0 && !forCount && !qb.IsSubCount)
             {
-                sqlbuilder.Append(string.Format("{0}ORDER BY ", qb.Readable ? System.Environment.NewLine : " "));
+                sqlbuilder.Append(string.Format("{0}ORDER BY ", qb.PrettyPrint ? System.Environment.NewLine : " "));
                 sqlbuilder.Append(qb.Orderbybuilder.ToString());
-                if (rowLimit > 0 && qb.SQLDialect.DialectName == "SQLServer")
-                {
-                    sqlbuilder.Append(string.Format("{0}OFFSET {1} ROWS FETCH NEXT {2} ROWS ONLY ", qb.Readable ? System.Environment.NewLine : " ", rowOffset, rowLimit));
-                }
             }
 
-            //如果没有任何Order by，为了支持Sql新的分页语法，则使用常量排序。
-            if ((qb.Orderbybuilder == null || qb.Orderbybuilder.Length == 0) && !forCount && !qb.IsSubCount)
-            {
-                if (rowLimit > 0 && qb.SQLDialect.DialectName == "SQLServer")
-                {
-                    sqlbuilder.Append(string.Format("{0}ORDER BY 1 ", qb.Readable ? System.Environment.NewLine : " "));
-                    sqlbuilder.Append(string.Format("{0}OFFSET {1} ROWS FETCH NEXT {2} ROWS ONLY ", qb.Readable ? System.Environment.NewLine : " ", rowOffset, rowLimit));
-                }
-            }
+            // 委托给子类的分页处理（各方言覆写此方法以提供各自的分页语法）
+            return ApplyPaging(sqlbuilder, rowLimit, rowOffset, forCount, qb.IsSubCount, qb.PrettyPrint);
+        }
 
-            //添加分页支持功能（Oracle，及其他数据库引擎）。
-            if (!forCount && rowLimit > 0 && !handleLimit)
+        /// <summary>
+        /// 对已构建的 SQL 应用分页限制。基类默认实现使用 LIMIT/OFFSET 语法（适用于 MySQL、PostgreSQL、SQLite）。
+        /// 各数据库方言可覆写以实现各自的分页语法。
+        /// </summary>
+        /// <param name="sql">已构建的 SELECT 语句（不含分页子句）。</param>
+        /// <param name="rowLimit">返回记录数上限，0 表示不限制。</param>
+        /// <param name="rowOffset">偏移行数，从 0 开始。</param>
+        /// <param name="forCount">是否为 COUNT 计数语句。</param>
+        /// <param name="isSubCount">是否为嵌套子查询计数。</param>
+        /// <param name="readable">是否生成可读格式（换行）。</param>
+        /// <returns>应用分页后的完整 SQL 字符串。</returns>
+        protected virtual string ApplyPaging(StringBuilder sql, int rowLimit, int rowOffset, bool forCount, bool isSubCount, bool readable)
+        {
+            if (!forCount && rowLimit > 0 && !isSubCount)
             {
-                // Oracle and OracleODP Oracle分页支持。
-                if (qb.SQLDialect.DialectName.StartsWith("Oracle"))
-                {
-                    string sql = sqlbuilder.ToString();
-                    sql = string.Format("SELECT P.*,rownum AS r from ({0}) P", sql);
-                    sqlbuilder.Remove(0, sqlbuilder.Length);
-                    sql = string.Format(fmtOracleLimit, sql, rowOffset, rowOffset + rowLimit);
-                    sqlbuilder.Append(sql);
-                }
-                else if (qb.SQLDialect.DialectName.StartsWith("DB2"))
-                {
-                    sqlbuilder.Append(string.Format(fmtDb2Limit, rowLimit + rowOffset));
-                }
-                else
-                {
-                    //其他数据库分页支持。
-                    sqlbuilder.Append(this.GetRowLimit(rowLimit));
-                    sqlbuilder.Append(this.GetRowOffset(rowLimit, rowOffset));
-                }
+                sql.Append(this.GetRowLimit(rowLimit));
+                sql.Append(this.GetRowOffset(rowLimit, rowOffset));
             }
-            return sqlbuilder.ToString();
+            return sql.ToString();
         }
     }
 }

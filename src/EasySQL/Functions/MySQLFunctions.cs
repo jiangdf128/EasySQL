@@ -56,13 +56,13 @@ namespace EasySQL
 
 
         /// <inheritdoc/>
-        public override string Sysdate
+        public override string SysDate
         {
             get { return "sysdate()"; }
         }
 
         /// <inheritdoc/>
-        public override string Truncate(string datefield)
+        public override string TruncateDate(string datefield)
         {
             return string.Format("date({0})", datefield);
         }

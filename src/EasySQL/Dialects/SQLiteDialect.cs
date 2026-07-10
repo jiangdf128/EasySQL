@@ -8,6 +8,9 @@ namespace EasySQL
         static readonly IDbFunction dbFunc = new SQLiteFunctions();
 
         /// <inheritdoc/>
+        public override DialectType DialectType => DialectType.SQLite;
+
+        /// <inheritdoc/>
         public override string DialectName { get { return "SQLite"; } }
 
         /// <inheritdoc/>

@@ -16,12 +16,12 @@ namespace EasySQL
         /// <summary>
         /// 错误消息。
         /// </summary>
-        public string Message { get; set; }
+        public string? Message { get; set; }
 
         /// <summary>
         /// 附件对象。
         /// </summary>
-        public object Tag { get; set; }
+        public object? Tag { get; set; }
 
         /// <summary>
         /// 获取函数执行结果是否成功。

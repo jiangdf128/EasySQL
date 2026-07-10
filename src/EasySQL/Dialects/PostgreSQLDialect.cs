@@ -10,6 +10,9 @@ namespace EasySQL
         static readonly IDbFunction dbFunc = new PostgreSQLFunctions();
 
         /// <inheritdoc/>
+        public override DialectType DialectType => DialectType.PostgreSQL;
+
+        /// <inheritdoc/>
         public override string DialectName { get { return "PostgreSQL"; } }
 
         /// <inheritdoc/>

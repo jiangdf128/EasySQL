@@ -34,7 +34,7 @@ namespace EasySQL
         }
 
         /// <inheritdoc/>
-        public override string SubString(string field, int start, int length)
+        public override string Substring(string field, int start, int length)
         {
             return string.Format("mid({0},{1},{2})", field, start, length);
         }
@@ -64,13 +64,13 @@ namespace EasySQL
         }
 
         /// <inheritdoc/>
-        public override string Sysdate
+        public override string SysDate
         {
             get { return "now()"; }
         }
 
         /// <inheritdoc/>
-        public override string Truncate(string datefield)
+        public override string TruncateDate(string datefield)
         {
             return string.Format("cdate(formatdatetime({0},2))",datefield);
         }

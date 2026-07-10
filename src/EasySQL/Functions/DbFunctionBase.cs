@@ -108,7 +108,7 @@ namespace EasySQL
         /// </summary>
         /// <param name="field">字符串字段名称。</param>
         /// <returns>返回格式化后的左截断字符串字段的函数字符串。</returns>
-        public virtual string LeftTrim(string field)
+        public virtual string LTrim(string field)
         {
             return string.Format("ltrim({0})", field);
         }
@@ -119,7 +119,7 @@ namespace EasySQL
         /// </summary>
         /// <param name="field">字符串字段名称。</param>
         /// <returns>返回格式化后的右截断字符串字段的函数字符串。</returns>
-        public virtual string RightTrim(string field)
+        public virtual string RTrim(string field)
         {
             return string.Format("rtrim({0})", field);
         }
@@ -171,7 +171,7 @@ namespace EasySQL
         /// <param name="start">截取开始位置。</param>
         /// <param name="length">截取长度。</param>
         /// <returns>返回格式化后截取一定长度字符串的函数字符串。</returns>
-        public virtual string SubString(string field, int start, int length)
+        public virtual string Substring(string field, int start, int length)
         {
             return string.Format("substring({0},{1},{2})", field,start,length);
         }
@@ -228,14 +228,14 @@ namespace EasySQL
         /// <summary>
         /// 返回获取系统时间的数据库函数名称。
         /// </summary>
-        public abstract string Sysdate { get; }
+        public abstract string SysDate { get; }
 
         /// <summary>
         /// 把日期字段截断时间到0点0分0秒的数据库函数。
         /// </summary>
         /// <param name="datefield">日期字段名称。</param>
         /// <returns>返回格式化后的截断日期字段时间的函数字符串。</returns>
-        public abstract string Truncate(string datefield);
+        public abstract string TruncateDate(string datefield);
 
         /// <summary>
         /// 在日期字段的基础上，加上某个日期（或时间）部分数的数据库函数。

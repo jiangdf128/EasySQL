@@ -1,3 +1,4 @@
+using System.Text;
 using System.Collections.Generic;
 
 namespace EasySQL
@@ -10,6 +11,9 @@ namespace EasySQL
         static readonly IDbFunction dbFunc = new SqlServerFunctions();
 
         /// <inheritdoc/>
+        public override DialectType DialectType => DialectType.SqlServer;
+
+        /// <inheritdoc/>
         public override string DialectName  { get { return "SQLServer"; } }
 
         /// <inheritdoc/>
@@ -17,6 +21,22 @@ namespace EasySQL
 
         /// <inheritdoc/>
         public override bool IsBracketJoin => false;
+
+        /// <inheritdoc/>
+        protected override string ApplyPaging(StringBuilder sql, int rowLimit, int rowOffset, bool forCount, bool isSubCount, bool readable)
+        {
+            if (forCount || isSubCount || rowLimit <= 0)
+                return sql.ToString();
+
+            // SQL Server 分页需要 ORDER BY，若无则追加常量排序
+            bool hasOrderBy = sql.ToString().Contains("ORDER BY");
+            if (!hasOrderBy)
+            {
+                sql.Append(string.Format("{0}ORDER BY 1 ", readable ? System.Environment.NewLine : " "));
+            }
+            sql.Append(string.Format("{0}OFFSET {1} ROWS FETCH NEXT {2} ROWS ONLY ", readable ? System.Environment.NewLine : " ", rowOffset, rowLimit));
+            return sql.ToString();
+        }
 
         protected override string QuoteKeyWord(string word)
         {

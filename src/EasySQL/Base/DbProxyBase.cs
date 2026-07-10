@@ -11,12 +11,12 @@ namespace EasySQL
         /// <summary>
         /// 数据库ID。
         /// </summary>
-        public virtual string DatabaseId { get; protected set; }
+        public virtual string? DatabaseId { get; protected set; }
 
         /// <summary>
         /// 数据库链接字符串
         /// </summary>
-        public virtual string ConnectString { get; protected set; }
+        public virtual string? ConnectString { get; protected set; }
 
         /// <summary>
         /// 配置连接信息。

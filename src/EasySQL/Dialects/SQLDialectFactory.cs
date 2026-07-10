@@ -11,7 +11,7 @@ namespace EasySQL
     public static class SQLDialectFactory
     {
         private static readonly object _lock = new object();
-        private static ISQLDialect  defaultDialect;
+        private static ISQLDialect? defaultDialect;
 
         private const string sqlconnection = "sqlconnection";
         private const string sqlceconnection = "sqlceconnection";
@@ -19,7 +19,7 @@ namespace EasySQL
         private const string sqliteconnection = "sqliteconnection";
         private const string mysqlconnection = "mysqlconnection";
         private const string oracleconnection = "oracleconnection";
-        private const string oledbconnection = "oledbconnection ";
+        private const string oledbconnection = "oledbconnection";
         private const string db2connection = "db2connection";
 
         private static readonly Dictionary<string, ISQLDialect> dialectDictionary
@@ -79,7 +79,7 @@ namespace EasySQL
             }
             lock (_lock)
             {
-                DefaultDialect = dialect;
+                DefaultDialect = dialect!;
             }
         }
 
@@ -97,7 +97,7 @@ namespace EasySQL
         /// </summary>
         /// <param name="name">方言名称。</param>
         /// <returns>方言实例，未找到时返回 null。</returns>
-        public static ISQLDialect GetDialect(string name)
+        public static ISQLDialect? GetDialect(string name)
         {
             if (dialectDictionary.ContainsKey(name))
             {
@@ -111,7 +111,7 @@ namespace EasySQL
         /// </summary>
         /// <param name="connection">数据库连接对象。</param>
         /// <returns>对应的方言实例。</returns>
-        public static ISQLDialect GetDialect(IDbConnection connection)
+        public static ISQLDialect? GetDialect(IDbConnection connection)
         {
             return GetDialect(connection.GetType().Name.ToLower());
         }
@@ -121,7 +121,7 @@ namespace EasySQL
         /// </summary>
         public static void UseSqlServerDialect()
         {
-            DefaultDialect = GetDialect(sqlconnection);
+            DefaultDialect = GetDialect(sqlconnection)!;
         }
 
         /// <summary>
@@ -129,7 +129,7 @@ namespace EasySQL
         /// </summary>
         public static void UsePostgreSQLDialect()
         {
-            DefaultDialect = GetDialect(npgsqlconnection);
+            DefaultDialect = GetDialect(npgsqlconnection)!;
         }
     }
 }

@@ -46,7 +46,7 @@ namespace EasySQL
         /// <returns></returns>
         public string GetJoinClause()
         {
-            var dialect = this.SourceSchema.SQLDialect ?? this.TargetSchema.SQLDialect;
+            var dialect = this.SourceSchema.SQLDialect! ?? this.TargetSchema.SQLDialect!;
            return dialect.GetJoinClause(this);
         }
     }

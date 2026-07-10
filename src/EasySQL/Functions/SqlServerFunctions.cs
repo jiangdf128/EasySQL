@@ -33,13 +33,13 @@ namespace EasySQL
         }
 
         /// <inheritdoc/>
-        public override string Sysdate
+        public override string SysDate
         {
             get { return "getdate()"; }
         }
 
         /// <inheritdoc/>
-        public override string Truncate(string datefield)
+        public override string TruncateDate(string datefield)
         {
             return string.Format("cast(convert(varchar(10),{0},102) as datetime)", datefield);
         }

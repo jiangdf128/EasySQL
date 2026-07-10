@@ -8,6 +8,9 @@ namespace EasySQL
         static readonly IDbFunction dbFunc = new MySQLFunctions();
 
         /// <inheritdoc/>
+        public override DialectType DialectType => DialectType.MySQL;
+
+        /// <inheritdoc/>
         public override string DialectName { get { return "MySQL"; } }
 
         /// <inheritdoc/>

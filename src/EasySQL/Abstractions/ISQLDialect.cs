@@ -9,6 +9,16 @@ namespace EasySQL
     {
 
         /// <summary>
+        /// 获取数据库方言类型枚举。
+        /// </summary>
+        DialectType DialectType { get; }
+
+        /// <summary>
+        /// 获取参数化查询的参数前缀符。SQL Server/MySQL/PostgreSQL 为 @，Oracle 为 :。
+        /// </summary>
+        string ParameterPrefix { get; }
+
+        /// <summary>
         /// 获取数据库方言名称。
         /// </summary>
         string DialectName { get; }
@@ -54,7 +64,7 @@ namespace EasySQL
         /// <summary>
         /// 构造QueryBuilder对象的SQL语句。
         /// </summary>
-        /// <param name="queryBuilder"></param>
+        /// <param name="qb"></param>
         /// <param name="rowLimit"></param>
         /// <param name="rowOffset"></param>
         /// <param name="forCount">是否为计数构造。</param>

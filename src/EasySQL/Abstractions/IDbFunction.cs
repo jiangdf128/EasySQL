@@ -74,7 +74,7 @@ namespace EasySQL
         /// </summary>
         /// <param name="field">字符串字段名称。</param>
         /// <returns>返回格式化后的左截断字符串字段的函数字符串。</returns>
-        string LeftTrim(string field);
+        string LTrim(string field);
 
 
         /// <summary>
@@ -82,7 +82,7 @@ namespace EasySQL
         /// </summary>
         /// <param name="field">字符串字段名称。</param>
         /// <returns>返回格式化后的右截断字符串字段的函数字符串。</returns>
-        string RightTrim(string field);
+        string RTrim(string field);
 
         /// <summary>
         /// 截断字符串字段两边的空字符的数据库函数。
@@ -117,7 +117,7 @@ namespace EasySQL
         /// <param name="start">截取开始位置。</param>
         /// <param name="length">截取长度。</param>
         /// <returns>返回格式化后截取一定长度字符串的函数字符串。</returns>
-        string SubString(string field, int start, int length);
+        string Substring(string field, int start, int length);
 
         /// <summary>
         /// 将字段数据转换成字符串数据类型的数据库函数。
@@ -161,14 +161,14 @@ namespace EasySQL
         /// <summary>
         /// 返回获取系统时间的数据库函数名称。
         /// </summary>
-        string Sysdate { get; }
+        string SysDate { get; }
 
         /// <summary>
         /// 把日期字段截断时间到0点0分0秒的数据库函数。
         /// </summary>
         /// <param name="datefield">日期字段名称。</param>
         /// <returns>返回格式化后的截断日期字段时间的函数字符串。</returns>
-        string Truncate(string datefield);
+        string TruncateDate(string datefield);
 
         /// <summary>
         /// 在日期字段的基础上，加上某个日期（或时间）部分数的数据库函数。

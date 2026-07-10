@@ -36,7 +36,7 @@ namespace EasySQL
         /// <summary>
         /// 获取或设置拆表的名称，如果设置为null则认为是默认表名称。
         /// </summary>
-        public string PartialTableName
+        public string? PartialTableName
         {
             set
             {
@@ -126,8 +126,8 @@ namespace EasySQL
             {
                 fieldAlias = this.FieldAliases[field];
             }
-            string extractFieldAlias=(fieldAlias!=null && fieldAlias.Trim().Length>0)? string.Format(" AS {0}",this.SQLDialect.QuoteField(fieldAlias.Trim())):string.Empty;
-            return $"{prefix}{this.SQLDialect.QuoteField(field.Trim())}{extractFieldAlias}";
+            string extractFieldAlias=(fieldAlias!=null && fieldAlias.Trim().Length>0)? string.Format(" AS {0}",this.SQLDialect!.QuoteField(fieldAlias.Trim())):string.Empty;
+            return $"{prefix}{this.SQLDialect!.QuoteField(field.Trim())}{extractFieldAlias}";
         }
 
         /// <summary>
@@ -253,7 +253,7 @@ namespace EasySQL
             }
             if (item is QueryBuilder)
             {
-                QueryBuilder qb = item as QueryBuilder;
+                QueryBuilder? qb = item as QueryBuilder;
                 if (qb.FromItems.Contains(this))
                 {
                     //不能够把包含自身的查询作为自己的子查询，否则构造SQL语句的时候会造成无限循环，以及堆栈溢出。
@@ -325,7 +325,7 @@ namespace EasySQL
                         clause.Append(" ");
                     }
                     clause.Append(this.Joins[i].GetJoinClause());
-                    if (this.SQLDialect.IsBracketJoin)
+                    if (this.SQLDialect!.IsBracketJoin)
                     {
                         brackets = i+1;
                         clause.Append(")");
@@ -349,7 +349,7 @@ namespace EasySQL
         /// </summary>
         /// <param name="alias">子查询别名</param>
         /// <returns></returns>
-        public QueryBuilder Query(string alias = null)
+        public QueryBuilder Query(string? alias = null)
         {
             if (this.SelectFields.Count == 0)
             {
@@ -361,22 +361,22 @@ namespace EasySQL
         }
 
         /// <summary>
-        /// 选择表所有字段。
+        /// 选择表所有字段（生成 <c>u.*</c> 或 <c>*</c>）。
         /// </summary>
-        /// <returns></returns>
         public SchemaBase Select()
         {
             return this.SelectExpression(string.IsNullOrWhiteSpace(this.Alias) ? "*":$"{this.Alias}.*" );
         }
 
         /// <summary>
-        /// 根据一个字段名称选择查询列。
+        /// 选择单个字段作为查询列。如果字段是保留关键字，方言会自动加引号转义。
         /// </summary>
-        /// <remarks>在这里，请不要使用表达式，如：Amount-Tax这样的表达式，会被Sql数据引擎当成关键字修饰，从而成为单独的字段名称。
-        /// 如要使用表达式，请使用函数<see cref="SelectExpression"/>。
-        /// 同样，也不要使用该函数，为列字段命名别名，否则也可能会被当成关键字修饰成为单独的字段，因此请使用别名参数。
+        /// <remarks>
+        /// 推荐用 Schema 的字段 getter 方法：
+        /// <code>user.Select(user.GetName());</code>
+        /// 不要直接写表达式（如 <c>"Amount-Tax"</c>），表达式应使用 <see cref="SelectExpression"/>。
         /// </remarks>
-        /// <param name="field">数据表（或视图）的字段名称</param>
+        /// <param name="field">字段名，推荐通过 <c>schema.GetXxx()</c> 获取。</param>
         public SchemaBase Select(string field)
         {
             return this.Select(field, false);
@@ -457,15 +457,32 @@ namespace EasySQL
         /// <param name="aliasName">结果列的别名。</param>
         public SchemaBase SelectExpressionAlias(string expression,string aliasName)
         {
-            this.SelectFields.Add(string.Format("{0} AS {1}", expression, this.SQLDialect.QuoteField(aliasName)));
+            this.SelectFields.Add(string.Format("{0} AS {1}", expression, this.SQLDialect!.QuoteField(aliasName)));
             return this;
         }
 
         /// <summary>
-        /// 自然连接目标表（或视图）。
+        /// INNER JOIN 连接。在 Schema 实例间定义连接关系，
+        /// 然后通过 <see cref="QueryBuilder.From(System.SchemaBase[])" /> 一次性注册到查询中。
         /// </summary>
-        /// <param name="target">目标表（或视图）对象</param>
-        /// <param name="clause">连接条件子句。</param>
+        /// <example>
+        /// <code>
+        /// var su = new UserSchema("u");
+        /// var so = new OrderSchema("o");
+        ///
+        /// // 单字段连接（类型安全，字段名变更时编译报错）
+        /// su.Join(so, $"{su.GetId(true)} = {so.GetUserId(true)}");
+        ///
+        /// // 多字段连接
+        /// su.Join(so, $"{su.GetId(true)} = {so.GetUserId(true)} " +
+        ///            $"AND {su.GetStatus()} = 1");
+        ///
+        /// // 注册到查询
+        /// qb.From(su, so);
+        /// </code>
+        /// </example>
+        /// <param name="target">要连接的目标表 Schema。</param>
+        /// <param name="clause">ON 条件表达式。</param>
         public SchemaBase Join(ITableSchema target, string clause)
         {
             return this.AddJoin(target, clause, JoinType.Inner);
@@ -666,7 +683,7 @@ namespace EasySQL
         {
             string alias;
             alias = (this.Alias != null && this.Alias.Trim().Length > 0) ? string.Format(" {0}", this.Alias.Trim()) : string.Empty;
-            return string.Format("{0}{1}", ((this is QueryBuilder) ? this.TableName : this.SQLDialect.QuoteTable( this.IsPartialTableName? this.PartialTableName: this.TableName)), alias);
+            return string.Format("{0}{1}", ((this is QueryBuilder) ? this.TableName : this.SQLDialect!.QuoteTable( this.IsPartialTableName? this.PartialTableName: this.TableName)), alias);
         }
 
         /// <summary>
@@ -687,6 +704,26 @@ namespace EasySQL
         public string QuoteField(string field)
         {
             return this.QuoteField(field, true);
+        }
+
+        /// <summary>
+        /// 将字段名转换为参数化查询的命名参数。
+        /// 根据当前方言自动添加前缀（SQL Server/MySQL 用 @，Oracle 用 :）。
+        /// 注意：该方法仅格式化参数字符串，不会自动注册参数值。请使用 Builder 的 AddParameter 注册。
+        /// </summary>
+        /// <example>
+        /// <code>
+        /// // SQL Server → "@Status"
+        /// // Oracle    → ":Status"
+        /// qb.Where($"{su.GetStatus()} = {su.AsParam("Status")}")
+        ///    .AddParameter("Status", 1);
+        /// </code>
+        /// </example>
+        /// <param name="name">参数名称（不含前缀）。</param>
+        /// <returns>带方言前缀的参数占位符字符串。</returns>
+        public string AsParam(string name)
+        {
+            return $"{this.SQLDialect!.ParameterPrefix}{name}";
         }
 
         #endregion

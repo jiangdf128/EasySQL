@@ -4,7 +4,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
+    <StartupObject>EasySQL.Test.SqlDemo</StartupObject>
     <RootNamespace>EasySQL.Test</RootNamespace>
   </PropertyGroup>
 
@@ -19,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\EasySQL\EasySQL.csproj" />
+    <ProjectReference Include="..\..\src\EasySQL.Dapper\EasySQL.Dapper.csproj" />
   </ItemGroup>
 
 </Project>
