@@ -302,7 +302,7 @@ namespace EasySQL.Test
 
             var tmp = new TempTableDef("#tmp_result", "Name", "Email", "Amount") { SQLDialect = dialect };
 
-            string sql = dialect.BuildIntoSql(qb, tmp.TableName, isTemp: true);
+            string sql = new InsertBuilder(tmp).BuildIntoSql(fromQuery: qb);
             Print($"BuildIntoSql [{label}]", sql);
         }
 

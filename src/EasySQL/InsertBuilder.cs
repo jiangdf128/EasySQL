@@ -102,12 +102,13 @@ namespace EasySQL
         /// </code>
         /// </example>
         /// <param name="fromQuery">数据来源查询构建器。</param>
-        /// <param name="isTemp">是否为临时表，默认 false。</param>
+        /// <param name="isTemp">是否为临时表。传入 TempTableDef 时自动识别，无需显式指定。</param>
         /// <returns>完整 SQL 语句。</returns>
         public string BuildIntoSql(QueryBuilder fromQuery, bool isTemp = false)
         {
             string targetTable = Table.IsPartialTableName ? Table.PartialTableName! : Table.TableName;
-            return this.Table.SQLDialect!.BuildIntoSql(fromQuery, targetTable, isTemp);
+            // TempTableDef 实例自动按临时表处理，无需手动传 isTemp
+            return this.Table.SQLDialect!.BuildIntoSql(fromQuery, targetTable, isTemp || Table is TempTableDef);
         }
     }
 }
