@@ -1,0 +1,53 @@
+-- EasySQL 测试数据库 DDL（SQL Server）
+-- 5 张经典电商表：Users / Products / Orders / OrderItems / OrderPayments
+
+CREATE TABLE Users (
+    Id         INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    UserName   NVARCHAR(50) NOT NULL,
+    Email      NVARCHAR(200) NOT NULL DEFAULT '',
+    Phone      NVARCHAR(20) NOT NULL DEFAULT '',
+    Balance    DECIMAL(18,2) NOT NULL DEFAULT 0,
+    Status     SMALLINT NOT NULL DEFAULT 1,
+    CreateTime DATETIME2 NOT NULL DEFAULT GETDATE()
+);
+
+CREATE TABLE Products (
+    Id         INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    Name       NVARCHAR(200) NOT NULL,
+    Price      DECIMAL(18,2) NOT NULL,
+    Stock      INT NOT NULL DEFAULT 0,
+    Status     SMALLINT NOT NULL DEFAULT 1,
+    CreateTime DATETIME2 NOT NULL DEFAULT GETDATE()
+);
+
+CREATE TABLE Orders (
+    Id          BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    UserId      INT NOT NULL,
+    OrderNo     NVARCHAR(32) NOT NULL,
+    TotalAmount DECIMAL(18,2) NOT NULL DEFAULT 0,
+    Status      SMALLINT NOT NULL DEFAULT 1,
+    CreateTime  DATETIME2 NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_Orders_UserId FOREIGN KEY (UserId) REFERENCES Users(Id)
+);
+
+CREATE TABLE OrderItems (
+    Id         BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    OrderId    BIGINT NOT NULL,
+    ProductId  INT NOT NULL,
+    Quantity   INT NOT NULL DEFAULT 1,
+    UnitPrice  DECIMAL(18,2) NOT NULL,
+    CreateTime DATETIME2 NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_OrderItems_OrderId   FOREIGN KEY (OrderId)   REFERENCES Orders(Id),
+    CONSTRAINT FK_OrderItems_ProductId FOREIGN KEY (ProductId) REFERENCES Products(Id)
+);
+
+CREATE TABLE OrderPayments (
+    Id         BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    OrderId    BIGINT NOT NULL UNIQUE,
+    PayMethod  SMALLINT NOT NULL DEFAULT 1,
+    Amount     DECIMAL(18,2) NOT NULL,
+    PayTime    DATETIME2 NULL,
+    Status     SMALLINT NOT NULL DEFAULT 1,
+    CreateTime DATETIME2 NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_OrderPayments_OrderId FOREIGN KEY (OrderId) REFERENCES Orders(Id)
+);

@@ -55,7 +55,6 @@ jobs:
       - name: Pack
         run: |
           dotnet pack src/EasySQL/EasySQL.csproj -c Release -o ./nupkg
-          dotnet pack src/EasySQL.Dapper/EasySQL.Dapper.csproj -c Release -o ./nupkg
 
       - name: Upload NuGet artifacts
         uses: actions/upload-artifact@v4

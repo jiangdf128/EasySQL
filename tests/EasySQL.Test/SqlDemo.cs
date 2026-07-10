@@ -46,20 +46,17 @@ namespace EasySQL.Test
             su.Select(su.GetName());
             su.Select(su.GetEmail());
             var qb = new QueryBuilder().From(su);
-            qb.PrettyPrint = false;
             Print("简单查询", qb.BuildSql());
 
             su.ClearSelect();
             su.Select();
             var qb2 = new QueryBuilder().From(su);
-            qb2.PrettyPrint = false;
             Print("全字段 *", qb2.BuildSql());
 
             su.ClearSelect();
             su.Select(su.GetStatus());
             var qb3 = new QueryBuilder().From(su);
             qb3.IsDistinct = true;
-            qb3.PrettyPrint = false;
             Print("DISTINCT", qb3.BuildSql());
         }
 
@@ -75,13 +72,11 @@ namespace EasySQL.Test
             su.Join(so, "u.Id = o.UserId");
 
             var qb = new QueryBuilder().From(su);
-            qb.PrettyPrint = false;
             Print("INNER JOIN", qb.BuildSql());
 
             su.ClearJoins();
             su.LeftJoin(so, "u.Id = o.UserId");
             var qb2 = new QueryBuilder().From(su);
-            qb2.PrettyPrint = false;
             Print("LEFT JOIN", qb2.BuildSql());
         }
 
@@ -97,7 +92,6 @@ namespace EasySQL.Test
             var qb = new QueryBuilder().From(su)
                 .Where("u.Status = 1", "u.Email IS NOT NULL")
                 .OrderBy("u.Name ASC");
-            qb.PrettyPrint = false;
             Print("条件 + 排序", qb.BuildSql());
 
             su.ClearSelect();
@@ -106,7 +100,6 @@ namespace EasySQL.Test
             var qb2 = new QueryBuilder().From(su)
                 .GroupBy("u.Status")
                 .Having("Count(1) > 5");
-            qb2.PrettyPrint = false;
             Print("分组 + Having", qb2.BuildSql());
         }
 
@@ -120,7 +113,6 @@ namespace EasySQL.Test
 
             var qb = new QueryBuilder().From(su)
                 .Where("u.Status = 1");
-            qb.PrettyPrint = false;
             Print("无分组 COUNT", qb.BuildCountSql());
 
             su.ClearSelect();
@@ -128,7 +120,6 @@ namespace EasySQL.Test
             su.SelectExpression("Count(1) AS Cnt");
             var qb2 = new QueryBuilder().From(su)
                 .GroupBy("u.Status");
-            qb2.PrettyPrint = false;
             Print("有分组 COUNT（子查询包装）", qb2.BuildCountSql());
         }
 
@@ -143,37 +134,31 @@ namespace EasySQL.Test
             // SQL Server（含 COUNT OVER，一次查询返回数据+总数）
             SQLDialectFactory.UseSqlServerDialect();
             var qb1 = new QueryBuilder().From(su).OrderBy("u.Name ASC");
-            qb1.PrettyPrint = false;
             Print($"SQL Server (含 {QueryBuilder.PagingTotalAlias} 计数列)", qb1.BuildSql(rowLimit: 10, rowOffset: 5));
 
             // MySQL
             SQLDialectFactory.UseDialect("mysqlconnection");
             var qb2 = new QueryBuilder().From(su);
-            qb2.PrettyPrint = false;
             Print("MySQL (LIMIT/OFFSET)", qb2.BuildSql(rowLimit: 10, rowOffset: 5));
 
             // PostgreSQL
             SQLDialectFactory.UseDialect("npgsqlconnection");
             var qb3 = new QueryBuilder().From(su);
-            qb3.PrettyPrint = false;
             Print("PostgreSQL (LIMIT/OFFSET)", qb3.BuildSql(rowLimit: 20, rowOffset: 0));
 
             // Oracle
             SQLDialectFactory.UseDialect("oracleconnection");
             var qb4 = new QueryBuilder().From(su);
-            qb4.PrettyPrint = false;
             Print("Oracle (OFFSET/FETCH)", qb4.BuildSql(rowLimit: 10, rowOffset: 5));
 
             // SQLite
             SQLDialectFactory.UseDialect("sqliteconnection");
             var qb5 = new QueryBuilder().From(su);
-            qb5.PrettyPrint = false;
             Print("SQLite (LIMIT/OFFSET)", qb5.BuildSql(rowLimit: 15, rowOffset: 0));
 
             // DB2
             SQLDialectFactory.UseDialect("db2connection");
             var qb6 = new QueryBuilder().From(su);
-            qb6.PrettyPrint = false;
             Print("DB2 (OFFSET/FETCH)", qb6.BuildSql(rowLimit: 10, rowOffset: 5));
         }
 
@@ -222,10 +207,8 @@ namespace EasySQL.Test
             su.Select(su.GetName());
 
             var qb1 = new QueryBuilder().From(su).Where("u.Status = 1");
-            qb1.PrettyPrint = false;
 
             var qb2 = new QueryBuilder().From(su).Where("u.Status = 2");
-            qb2.PrettyPrint = false;
 
             qb1.Union(qb2, isUnionAll: true);
             Print("UNION ALL", qb1.BuildSql());
@@ -243,7 +226,6 @@ namespace EasySQL.Test
                 .Where("u.Id = @UserId", "u.Status = @Status")
                 .AddParameter("UserId", 123)
                 .AddParameter("Status", 1);
-            qb.PrettyPrint = false;
 
             Print("参数化 SELECT", qb.BuildSql());
             Console.WriteLine($"  参数: UserId={qb.Parameters["UserId"]}, Status={qb.Parameters["Status"]}");
@@ -284,7 +266,6 @@ namespace EasySQL.Test
 
             var qb = new QueryBuilder().From(su)
                 .Exists(subQb);
-            qb.PrettyPrint = false;
 
             Print("EXISTS", qb.BuildSql());
         }

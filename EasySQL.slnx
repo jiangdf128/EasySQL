@@ -1,5 +1,4 @@
 <Solution>
   <Project Path="src/EasySQL/EasySQL.csproj" />
-  <Project Path="src/EasySQL.Dapper/EasySQL.Dapper.csproj" />
   <Project Path="tests/EasySQL.Test/EasySQL.Test.csproj" />
 </Solution>
