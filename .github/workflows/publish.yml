@@ -31,5 +31,8 @@ jobs:
       - name: Pack
         run: dotnet pack src/EasySQL/EasySQL.csproj -c Release --no-build -o ./nupkgs
 
+      - name: List package
+        run: ls -la ./nupkgs/
+
       - name: Publish to NuGet
-        run: dotnet nuget push ./nupkgs/*.nupkg --source https://api.nuget.org/v3/index.json
+        run: dotnet nuget push ./nupkgs/*.nupkg --skip-duplicate --source https://api.nuget.org/v3/index.json
