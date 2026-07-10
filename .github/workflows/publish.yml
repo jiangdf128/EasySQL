@@ -6,6 +6,10 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+'           # v1.0.0
       - 'v[0-9]+.[0-9]+.[0-9]+-preview*'   # v1.0.0-preview1
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
