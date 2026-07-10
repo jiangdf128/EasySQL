@@ -58,28 +58,28 @@ public class UserSchema : SchemaBase
 ### 构建查询
 
 ```csharp
-var user = new UserSchema("u");
-var order = new OrderSchema("o");
+var sa = new UserSchema("SA");
+var sb = new OrderSchema("SB");
 
 // 多字段选取（标准写法）
-user.Select(true, user.Name, user.Email);
-order.Select(true, order.Amount);
+sa.Select(true, sa.Name, sa.Email);
+sb.Select(true, sb.Amount);
 
 // JOIN + WHERE + ORDER BY
-user.Join(order, $"{user.GetId()} = {order.GetUserId()}");
+sa.Join(sb, $"{sa.GetId()} = {sb.GetUserId()}");
 
 var qb = new QueryBuilder()
-    .From(user, order)
-    .Where($"{user.GetId()} = {user.AsParam("Id")}")
+    .From(sa, sb)
+    .Where($"{sa.GetId()} = {sa.AsParam("Id")}")
     .AddParameter("Id", 123)
-    .OrderBy($"{user.GetName()} ASC");
+    .OrderBy($"{sa.GetName()} ASC");
 
 // 分页查询（一次查询，数据 + 总记录数）
 string sql = qb.BuildSql(rowLimit: 20, rowOffset: 0);
-// SELECT u.Name,u.Email,o.Amount,COUNT(*) OVER() AS TotalRows
-// FROM Users u INNER JOIN Orders o on u.Id = o.UserId
-// WHERE (u.Id = @Id)
-// ORDER BY u.Name ASC
+// SELECT SA.Name,SA.Email,SB.Amount,COUNT(*) OVER() AS TotalRows
+// FROM Users SA INNER JOIN Orders SB on SA.Id = SB.UserId
+// WHERE (SA.Id = @Id)
+// ORDER BY SA.Name ASC
 // OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY
 
 // 配合 Dapper 执行
