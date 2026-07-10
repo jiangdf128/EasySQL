@@ -21,7 +21,7 @@ namespace EasySQL
     /// so.Select(so.GetAmount());
     ///
     /// // ③ Schema 之间定义 JOIN 关系
-    /// su.Join(so, $"{su.GetId(true)} = {so.GetUserId(true)}");
+    /// su.Join(so, $"{su.GetId()} = {so.GetUserId()}");
     ///
     /// // ④ QueryBuilder 一次性 FROM，然后 WHERE / ORDER BY
     /// var qb = new QueryBuilder()
@@ -127,7 +127,7 @@ namespace EasySQL
         /// qb.From(su);
         ///
         /// // 多表（JOIN 关系在 Schema 上定义）
-        /// su.Join(so, $"{su.GetId(true)} = {so.GetUserId(true)}");
+        /// su.Join(so, $"{su.GetId()} = {so.GetUserId()}");
         /// qb.From(su, so);
         ///
         /// // 子查询
@@ -311,7 +311,7 @@ namespace EasySQL
         /// <example>
         /// <code>
         /// qb.OrderBy($"{su.GetName()} ASC",
-        ///            $"{su.GetCreateTime(true)} DESC");
+        ///            $"{su.GetCreateTime()} DESC");
         /// </code>
         /// </example>
         /// <param name="items">排序表达式，如 "Name ASC"、"CreateTime DESC"。</param>
@@ -367,7 +367,7 @@ namespace EasySQL
         /// // 查询有订单的用户
         /// var subQb = new QueryBuilder()
         ///     .From(so)
-        ///     .Where($"{so.GetUserId(true)} = {su.GetId(true)}");
+        ///     .Where($"{so.GetUserId()} = {su.GetId()}");
         /// var qb = new QueryBuilder()
         ///     .From(su)
         ///     .Exists(subQb);

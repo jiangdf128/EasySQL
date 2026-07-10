@@ -471,10 +471,10 @@ namespace EasySQL
         /// var so = new OrderSchema("o");
         ///
         /// // 单字段连接（类型安全，字段名变更时编译报错）
-        /// su.Join(so, $"{su.GetId(true)} = {so.GetUserId(true)}");
+        /// su.Join(so, $"{su.GetId()} = {so.GetUserId()}");
         ///
         /// // 多字段连接
-        /// su.Join(so, $"{su.GetId(true)} = {so.GetUserId(true)} " +
+        /// su.Join(so, $"{su.GetId()} = {so.GetUserId()} " +
         ///            $"AND {su.GetStatus()} = 1");
         ///
         /// // 注册到查询

@@ -66,7 +66,7 @@ user.Select(true, user.Name, user.Email);
 order.Select(true, order.Amount);
 
 // JOIN + WHERE + ORDER BY
-user.Join(order, $"{user.GetId(true)} = {order.GetUserId(true)}");
+user.Join(order, $"{user.GetId()} = {order.GetUserId()}");
 
 var qb = new QueryBuilder()
     .From(user, order)

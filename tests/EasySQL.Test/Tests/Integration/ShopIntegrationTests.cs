@@ -87,19 +87,19 @@ namespace EasySQL.Test.Tests.Integration
                 conn.Insert(new OrderPayment { OrderId = order.Id, PayMethod = 1, Amount = 6999, Status = 2 });
 
                 // 复杂多表查询 → EasySQL
-                var u = new UserSchema("u");
-                var o = new OrderSchema("o");
-                var p = new OrderPaymentSchema("p");
+                var sa = new UserSchema("A");
+                var sb = new OrderSchema("B");
+                var sc= new OrderPaymentSchema("C");
 
 
-                u.Select(true, u.UserName);
-                o.Select(true, o.OrderNo, o.TotalAmount);
-                p.Select(true, p.Amount, p.Status);
-                u.Join(o, $"{u.GetId(true)} = {o.GetUserId(true)}");
-                o.Join(p, $"{o.GetId(true)} = {p.GetOrderId(true)}");
+                sa.Select(true, sa.UserName);
+                sb.Select(true, sb.OrderNo, sb.TotalAmount);
+                sc.Select(true, sc.Amount, sc.Status);
+                sa.Join(sb, $"{sa.GetId()} = {sb.GetUserId()}");
+                sb.Join(sc, $"{sb.GetId()} = {sc.GetOrderId()}");
 
-                var qb = new QueryBuilder().From(u, o, p)
-                    .Where($"{o.GetOrderNo()} = 'ORD_FULL'");
+                var qb = new QueryBuilder().From(sa, sb, sc)
+                    .Where($"{sb.GetOrderNo()} = 'ORD_FULL'");
 
                 var rows = conn.Query(qb.BuildSql(), qb.Parameters.ToDynamicParameters()).ToList();
                 Assert.Single(rows);
@@ -153,8 +153,8 @@ namespace EasySQL.Test.Tests.Integration
                 u.Select(true, u.UserName);
                 o.Select(true, o.OrderNo);
                 i.Select(true, i.Quantity, i.UnitPrice);
-                u.Join(o, $"{u.GetId(true)} = {o.GetUserId(true)}");
-                o.Join(i, $"{o.GetId(true)} = {i.GetOrderId(true)}");
+                u.Join(o, $"{u.GetId()} = {o.GetUserId()}");
+                o.Join(i, $"{o.GetId()} = {i.GetOrderId()}");
 
                 var qb = new QueryBuilder().From(u, o, i)
                     .Where($"{o.GetOrderNo()} = 'ORD_JOIN'");
@@ -195,7 +195,7 @@ namespace EasySQL.Test.Tests.Integration
                 i.Select(true, i.ProductId);
                 i.SelectExpression("SUM(Quantity) AS TotalQty");
                 var qb = new QueryBuilder().From(i)
-                    .GroupBy($"{i.GetProductId(true)}")
+                    .GroupBy($"{i.GetProductId()}")
                     .Having("SUM(Quantity) >= 2");
 
                 var rows = conn.Query(qb.BuildSql(), qb.Parameters.ToDynamicParameters()).ToList();
