@@ -108,7 +108,7 @@ namespace EasySQL
             catch (Exception ex) {
                 tran.Rollback();
                 LogTransactionError?.Invoke(ex, dbConnection);
-                throw ex;
+                throw;
             }
         }
 
@@ -135,7 +135,7 @@ namespace EasySQL
             catch (Exception ex) {
                 tran.Rollback();
                 LogTransactionError?.Invoke(ex, dbConnection);
-                throw ex;
+                throw;
             }
         }
 
