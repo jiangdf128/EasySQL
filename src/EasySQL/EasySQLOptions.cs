@@ -21,6 +21,12 @@ namespace EasySQL
         public bool ClearExisting { get; set; } = false;
 
         /// <summary>
+        /// SELECT 时自动为下划线字段生成 PascalCase 别名（如 user_name AS UserName）。
+        /// 默认 false。使用 Dapper + MatchNamesWithUnderscores 的用户无需开启。
+        /// </summary>
+        public bool AutoAlias { get; set; } = false;
+
+        /// <summary>
         /// 注册一个数据库连接代理。
         /// </summary>
         /// <param name="proxy">数据库代理实例。</param>

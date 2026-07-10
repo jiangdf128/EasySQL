@@ -120,12 +120,33 @@ public class UserTableDef : TableDefBase
 // 多字段选取（标准写法）
 sa.Select(true, sa.Id, sa.Name);
 
-// 单字段选取
-sa.Select(sa.GetName());
-
 // WHERE 中引用
 qb.Where($"{sa.GetStatus()} = {sa.AsParam("Status")}").AddParameter("Status", 1);
 ```
+
+### 下划线字段自动别名（默认关闭）
+
+TableDef 常量写数据库真实列名（snake_case），开启 `AutoAlias` 后 SELECT 自动生成 PascalCase 别名：
+
+```sql
+-- AutoAlias=true 时 SELECT 自动加 AS PascalCase
+SELECT u.user_name AS UserName, u.create_time AS CreateTime FROM users u
+
+-- WHERE/JOIN：原样引用，无别名污染
+WHERE u.user_name = @Name
+```
+
+控制开关（默认 `false`）：
+```csharp
+// 全局设置
+EasySQLContext.AutoAlias = true;    // 开启
+EasySQLContext.AutoAlias = false;   // 关闭（默认）
+
+// 或通过配置
+EasySQLContext.Default.Configure(new EasySQLOptions { AutoAlias = true });
+```
+
+**使用 Dapper + `DefaultTypeMap.MatchNamesWithUnderscores` 的用户无需开启此选项。**
 
 ### 项目结构
 

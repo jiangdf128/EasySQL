@@ -27,6 +27,7 @@ namespace EasySQL.Test
             DemoInBuilder();
             DemoExists();
             DemoBuildIntoSql();
+            DemoSnakeCase();
 
             Console.WriteLine("=== 演示结束 ===");
         }
@@ -54,7 +55,7 @@ namespace EasySQL.Test
             Print("全字段 *", qb2.BuildSql());
 
             s.ClearSelect();
-            s.Select(s.GetStatus());
+            s.Select(true, s.Status);
             var qb3 = new QueryBuilder().From(s);
             qb3.IsDistinct = true;
             Print("DISTINCT", qb3.BuildSql());
@@ -67,8 +68,8 @@ namespace EasySQL.Test
 
             var s = new DemoUserTableDef("u");
             var sb = new DemoOrderTableDef("o");
-            s.Select(s.GetName());
-            sb.Select(sb.GetAmount());
+            s.Select(true, s.Name);
+            sb.Select(true, sb.Amount);
             s.Join(sb, $"{s.GetId()} = {sb.GetUserId()}");
 
             var qb = new QueryBuilder().From(s);
@@ -94,7 +95,7 @@ namespace EasySQL.Test
             Print("条件 + 排序", qb.BuildSql());
 
             s.ClearSelect();
-            s.Select(s.GetStatus());
+            s.Select(true, s.Status);
             s.SelectExpression("Count(1) AS Cnt");
             var qb2 = new QueryBuilder().From(s)
                 .GroupBy(s.GetStatus())
@@ -108,14 +109,14 @@ namespace EasySQL.Test
             Console.WriteLine("========== COUNT 计数 ==========");
 
             var s = new DemoUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb = new QueryBuilder().From(s)
                 .Where($"{s.GetStatus()} = 1");
             Print("无分组 COUNT", qb.BuildCountSql());
 
             s.ClearSelect();
-            s.Select(s.GetStatus());
+            s.Select(true, s.Status);
             s.SelectExpression("Count(1) AS Cnt");
             var qb2 = new QueryBuilder().From(s)
                 .GroupBy(s.GetStatus());
@@ -202,7 +203,7 @@ namespace EasySQL.Test
             Console.WriteLine("========== UNION ==========");
 
             var s = new DemoUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb1 = new QueryBuilder().From(s).Where($"{s.GetStatus()} = 1");
 
@@ -218,7 +219,7 @@ namespace EasySQL.Test
             Console.WriteLine("========== 参数化查询 ==========");
 
             var s = new DemoUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb = new QueryBuilder().From(s)
                 .Where($"{s.GetId()} = {s.AsParam("UserId")}", $"{s.GetStatus()} = {s.AsParam("Status")}")
@@ -257,7 +258,7 @@ namespace EasySQL.Test
 
             var s = new DemoUserTableDef("u");
             var sb = new DemoOrderTableDef("o");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var subQb = new QueryBuilder().From(sb)
                 .Where($"{sb.GetUserId()} = {s.GetId()}");
@@ -306,6 +307,30 @@ namespace EasySQL.Test
             Print($"BuildIntoSql [{label}]", sql);
         }
 
+        static void DemoSnakeCase()
+        {
+            Console.WriteLine("========== 下划线字段自动别名（默认关闭）==========");
+
+            var u = new DemoSnakeUserTableDef("u");
+
+            // 默认关闭：无别名
+            u.Select(true, u.UserName, u.Email, u.CreateTime);
+            var qb = new QueryBuilder().From(u)
+                .Where($"{u.GetStatus()} = {u.AsParam("Status")}")
+                .OrderBy($"{u.GetCreateTime()} DESC");
+            Print("AutoAlias=OFF（默认）", qb.BuildSql());
+
+            // 开启自动别名
+            u.ClearSelect();
+            EasySQLContext.AutoAlias = true;
+            u.Select(true, u.UserName, u.Email, u.CreateTime);
+            var qb2 = new QueryBuilder().From(u)
+                .Where($"{u.GetStatus()} = {u.AsParam("Status")}")
+                .OrderBy($"{u.GetCreateTime()} DESC");
+            Print("AutoAlias=ON", qb2.BuildSql());
+            EasySQLContext.AutoAlias = false; // 恢复默认
+        }
+
     }
 
     // 演示用的简短 TableDef 类
@@ -352,5 +377,34 @@ namespace EasySQL.Test
         public string GetId(bool needPrefix = true) => QuoteField(ID, needPrefix);
         public string GetUserId(bool needPrefix = true) => QuoteField(USER_ID, needPrefix);
         public string GetAmount(bool needPrefix = true) => QuoteField(AMOUNT, needPrefix);
+    }
+
+    /// <summary>
+    /// 模拟 snake_case 数据库的 TableDef（列名含下划线）。
+    /// </summary>
+    class DemoSnakeUserTableDef : TableDefBase
+    {
+        public const string TABLE = "users";
+        public const string ID = "id";
+        public const string USER_NAME = "user_name";
+        public const string EMAIL = "email";
+        public const string CREATE_TIME = "create_time";
+        public const string STATUS = "status";
+
+        public override string TableName => TABLE;
+        public DemoSnakeUserTableDef(string? alias = null, ISQLDialect? dialect = null)
+            : base(alias ?? string.Empty, dialect) { }
+
+        public string Id => ID;
+        public string UserName => USER_NAME;
+        public string Email => EMAIL;
+        public string CreateTime => CREATE_TIME;
+        public string Status => STATUS;
+
+        public string GetId(bool p = true) => QuoteField(ID, p);
+        public string GetUserName(bool p = true) => QuoteField(USER_NAME, p);
+        public string GetEmail(bool p = true) => QuoteField(EMAIL, p);
+        public string GetCreateTime(bool p = true) => QuoteField(CREATE_TIME, p);
+        public string GetStatus(bool p = true) => QuoteField(STATUS, p);
     }
 }

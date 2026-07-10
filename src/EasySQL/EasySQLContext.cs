@@ -48,6 +48,11 @@ namespace EasySQL
         /// </summary>
         public static readonly EasySQLContext Default = new();
 
+        /// <summary>
+        /// SELECT 时自动为下划线字段生成 PascalCase 别名。通过 <see cref="EasySQLOptions.AutoAlias"/> 配置。
+        /// </summary>
+        public static bool AutoAlias { get; set; } = false;
+
         private readonly object _lock = new();
         private readonly Dictionary<string, IDbProxy> _dbs = new();
         private IDbProxy? _defaultDb;
@@ -84,6 +89,9 @@ namespace EasySQL
                     _defaultDb ??= db;
                 }
             }
+
+            // 同步全局选项
+            AutoAlias = options.AutoAlias;
 
             // 用户显式指定方言时优先覆盖；否则首次 Open() 时自动对齐
             if (options.DefaultDialect != DialectType.SqlServer)

@@ -76,8 +76,8 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName());
-            s.Select(s.GetEmail());
+            s.Select(true, s.Name);
+            s.Select(true, s.Email);
 
             var qb = new QueryBuilder().From(s);
 
@@ -105,7 +105,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
-            s.Select(s.GetStatus());
+            s.Select(true, s.Status);
 
             var qb = new QueryBuilder().From(s);
             qb.IsDistinct = true;
@@ -123,7 +123,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb = new QueryBuilder().From(s)
                 .Where($"{s.GetStatus()} = 1", $"{s.GetEmail()} IS NOT NULL");
@@ -138,7 +138,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
-            s.Select(s.GetStatus());
+            s.Select(true, s.Status);
             s.SelectExpression("Count(1) AS Cnt");
 
             var qb = new QueryBuilder().From(s)
@@ -175,8 +175,8 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
             var sb = new TestOrderTableDef("o");
-            s.Select(s.GetName());
-            sb.Select(sb.GetAmount());
+            s.Select(true, s.Name);
+            sb.Select(true, sb.Amount);
             s.Join(sb, $"{s.GetId()} = {sb.GetUserId()}");
 
             var qb = new QueryBuilder().From(s);
@@ -192,8 +192,8 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
             var sb = new TestOrderTableDef("o");
-            s.Select(s.GetName());
-            sb.Select(sb.GetAmount());
+            s.Select(true, s.Name);
+            sb.Select(true, sb.Amount);
             s.LeftJoin(sb, $"{s.GetId()}={sb.GetUserId()}");
 
             var qb = new QueryBuilder().From(s);
@@ -211,7 +211,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb = new QueryBuilder().From(s)
                 .Where($"{s.GetStatus()} = 1");
@@ -227,7 +227,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
-            s.Select(s.GetStatus());
+            s.Select(true, s.Status);
             s.SelectExpression("Count(1) AS Cnt");
 
             var qb = new QueryBuilder().From(s)
@@ -261,7 +261,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb = new QueryBuilder().From(s);
             qb.OrderBy($" { s.GetEmail() } Asc");
@@ -280,7 +280,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseDialect("mysqlconnection");
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb = new QueryBuilder().From(s);
 
@@ -295,7 +295,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseDialect("npgsqlconnection");
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb = new QueryBuilder().From(s);
 
@@ -313,7 +313,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseDialect("oracleconnection");
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb = new QueryBuilder().From(s);
 
@@ -390,7 +390,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb1 = new QueryBuilder().From(s)
                 .Where($"{s.GetStatus()} = 1");
@@ -412,7 +412,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb = new QueryBuilder().From(s)
                 .Where($"{s.GetId()} = {s.AsParam("UserId")}", $"{s.GetStatus()} = {s.AsParam("Status")}")
@@ -484,7 +484,7 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
             var sb = new TestOrderTableDef("o");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var subQb = new QueryBuilder().From(sb)
                 .Where($"{sb.GetUserId()} = {s.GetId()}");
@@ -505,7 +505,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb = new QueryBuilder().From(s);
 
@@ -522,7 +522,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb = new QueryBuilder().From(s)
                 .Where($"{s.GetStatus()} = 1")
@@ -564,7 +564,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseDialect("mysqlconnection");
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb = new QueryBuilder().From(s);
             var tmp = new TempTableDef("tmp_users", "Name");
@@ -579,7 +579,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseDialect("npgsqlconnection");
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb = new QueryBuilder().From(s);
             var tmp = new TempTableDef("tmp_users", "Name");
@@ -594,7 +594,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseDialect("oracleconnection");
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb = new QueryBuilder().From(s);
             var tmp = new TempTableDef("tmp_users", "Name");
@@ -608,7 +608,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseDialect("db2connection");
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName());
+            s.Select(true, s.Name);
 
             var qb = new QueryBuilder().From(s);
             var tmp = new TempTableDef("tmp_users", "Name");
@@ -646,9 +646,9 @@ namespace EasySQL.Test
             var sa = new TestUserTableDef("SA");
             var tmp = new TempTableDef("#t", "Id", "Name") { Alias = "t" };
 
-            sa.Select(sa.GetName());
+            sa.Select(true, sa.Name);
             // tmp["Name"] 返回带前缀的 "t.Name"，用 Select(field) 即可（同 GetXxx 用法）
-            tmp.Select(tmp["Name"]);
+            tmp.Select(false, tmp["Name"]);
             sa.Join(tmp, $"{sa.GetId()} = {tmp["Id"]}");
 
             var qb = new QueryBuilder().From(sa, tmp);
@@ -687,6 +687,116 @@ namespace EasySQL.Test
             Assert.Equal(DialectType.Oracle, new OracleDialect().DialectType);
             Assert.Equal(DialectType.SQLite, new SQLiteDialect().DialectType);
             Assert.Equal(DialectType.DB2, new DB2Dialect().DialectType);
+        }
+
+        // ================================================================
+        // 下划线字段自动别名（snake_case → PascalCase）测试
+        // ================================================================
+
+        /// <summary>
+        /// 模拟 snake_case 数据库的 TableDef。
+        /// </summary>
+        class SnakeUserTableDef : TableDefBase
+        {
+            public const string TABLE = "users";
+            public const string ID = "id";
+            public const string USER_NAME = "user_name";
+            public const string EMAIL = "email";
+            public const string CREATE_TIME = "create_time";
+
+            public override string TableName => TABLE;
+            public SnakeUserTableDef(string? alias = null, ISQLDialect? dialect = null)
+                : base(alias ?? string.Empty, dialect) { }
+
+            public string Id => ID;
+            public string UserName => USER_NAME;
+            public string Email => EMAIL;
+            public string CreateTime => CREATE_TIME;
+
+            public string GetId(bool p = true) => QuoteField(ID, p);
+            public string GetUserName(bool p = true) => QuoteField(USER_NAME, p);
+            public string GetEmail(bool p = true) => QuoteField(EMAIL, p);
+            public string GetCreateTime(bool p = true) => QuoteField(CREATE_TIME, p);
+        }
+
+        [Fact]
+        public void SnakeCaseField_AutoAliasOff_ShouldNotAlias()
+        {
+            // 默认关闭
+            SQLDialectFactory.UseSqlServerDialect();
+            var u = new SnakeUserTableDef("u");
+            u.Select(true, u.UserName, u.CreateTime);
+
+            var qb = new QueryBuilder().From(u);
+            var sql = qb.BuildSql();
+            LogSql(sql, "AutoAlias OFF（默认） — 无别名");
+
+            Assert.Contains("u.user_name", sql);
+            Assert.Contains("u.create_time", sql);
+            Assert.DoesNotContain("AS UserName", sql);
+            Assert.DoesNotContain("AS CreateTime", sql);
+        }
+
+        [Fact]
+        public void SnakeCaseField_AutoAliasOn_ShouldAliasToPascalCase()
+        {
+            EasySQLContext.AutoAlias = true;
+            try
+            {
+                SQLDialectFactory.UseSqlServerDialect();
+                var u = new SnakeUserTableDef("u");
+                u.Select(true, u.UserName, u.CreateTime);
+
+                var qb = new QueryBuilder().From(u);
+                var sql = qb.BuildSql();
+                LogSql(sql, "AutoAlias ON — 下划线字段自动别名");
+
+                Assert.Contains("u.user_name AS UserName", sql);
+                Assert.Contains("u.create_time AS CreateTime", sql);
+            }
+            finally { EasySQLContext.AutoAlias = false; }
+        }
+
+        [Fact]
+        public void AutoAlias_On_NoUnderscore_ShouldNotAddAlias()
+        {
+            EasySQLContext.AutoAlias = true;
+            try
+            {
+                SQLDialectFactory.UseSqlServerDialect();
+                var u = new SnakeUserTableDef("u");
+                u.Select(true, u.Id, u.Email);
+
+                var qb = new QueryBuilder().From(u);
+                var sql = qb.BuildSql();
+                LogSql(sql, "AutoAlias ON — 无下划线字段不生成别名");
+
+                Assert.Contains("u.id", sql);
+                Assert.Contains("u.email", sql);
+                Assert.DoesNotContain("AS Id", sql);
+                Assert.DoesNotContain("AS Email", sql);
+            }
+            finally { EasySQLContext.AutoAlias = false; }
+        }
+
+        [Fact]
+        public void ExplicitAlias_ShouldOverrideAutoAlias()
+        {
+            EasySQLContext.AutoAlias = true;
+            try
+            {
+                SQLDialectFactory.UseSqlServerDialect();
+                var u = new SnakeUserTableDef("u");
+                u.Select(u.UserName, "Name");
+
+                var qb = new QueryBuilder().From(u);
+                var sql = qb.BuildSql();
+                LogSql(sql, "显式别名覆盖自动别名");
+
+                Assert.Contains("user_name AS Name", sql);
+                Assert.DoesNotContain("AS UserName", sql);
+            }
+            finally { EasySQLContext.AutoAlias = false; }
         }
     }
 }

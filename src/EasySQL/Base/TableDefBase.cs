@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace EasySQL
@@ -117,6 +118,25 @@ namespace EasySQL
             {
                 this.FieldAliases.Add(field, fieldAlias);
             }
+        }
+
+        /// <summary>
+        /// 自动将 snake_case 字段名转为 PascalCase 别名（如 "u.user_name" → "UserName"）。
+        /// 仅当字段名包含下划线时生效。
+        /// </summary>
+        private string GetAutoAlias(string field)
+        {
+            if (!EasySQLContext.AutoAlias) return string.Empty;
+
+            // 剥离表别名前缀（如 "u.user_name" → "user_name"）
+            string name = field;
+            int dotIndex = field.LastIndexOf('.');
+            if (dotIndex >= 0)
+                name = field.Substring(dotIndex + 1);
+
+            if (!name.Contains('_')) return string.Empty;
+
+            return  this.QuoteField(FieldNameConverter.SnakeToPascalCase(name),false);
         }
 
         private string GetSqlFormatField(string field, string fieldAlias, bool needPrefix)
@@ -369,27 +389,14 @@ namespace EasySQL
         }
 
         /// <summary>
-        /// 选择单个字段作为查询列。如果字段是保留关键字，方言会自动加引号转义。
-        /// </summary>
-        /// <remarks>
-        /// 推荐用 TableDef 的字段 getter 方法：
-        /// <code>user.Select(user.GetName());</code>
-        /// 不要直接写表达式（如 <c>"Amount-Tax"</c>），表达式应使用 <see cref="SelectExpression"/>。
-        /// </remarks>
-        /// <param name="field">字段名，推荐通过 <c>schema.GetXxx()</c> 获取。</param>
-        public TableDefBase Select(string field)
-        {
-            return this.Select(field, false);
-        }
-
-        /// <summary>
         /// 根据一个字段名称选择查询列，同时指定查询列需要用表别名限定。
+        /// 字段名含下划线时自动生成 PascalCase 别名（如 user_name AS UserName）。
         /// </summary>
         /// <param name="field">数据表（或视图）的字段名称。</param>
         /// <param name="needPrefix">是否需要使用表别名限定。</param>
-        public TableDefBase Select(string field, bool needPrefix)
+        private TableDefBase Select(string field, bool needPrefix)
         {
-            return this.Select(field, string.Empty, needPrefix);
+            return this.Select(field, GetAutoAlias(field), needPrefix);
         }
 
         /// <summary>
