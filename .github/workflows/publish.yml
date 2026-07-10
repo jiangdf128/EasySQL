@@ -39,17 +39,4 @@ jobs:
         run: ls -la ./nupkgs/
 
       - name: Publish to NuGet
-        run: |
-          echo "正在获取 OIDC token..."
-          response=$(curl -sLS "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=https://api.nuget.org" \
-            -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
-            -H "Accept: application/json; api-version=2.0")
-          oidc_token=$(echo "$response" | jq -r '.value')
-          if [ -z "$oidc_token" ] || [ "$oidc_token" = "null" ]; then
-            echo "❌ 获取 OIDC token 失败: $response"
-            exit 1
-          fi
-          echo "✅ OIDC token 获取成功，正在推送..."
-          dotnet nuget push ./nupkgs/*.nupkg \
-            --api-key "$oidc_token" \
-            --source https://api.nuget.org/v3/index.json
+        run: dotnet nuget push ./nupkgs/*.nupkg --source https://api.nuget.org/v3/index.json --skip-duplicate
