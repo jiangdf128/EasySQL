@@ -215,6 +215,8 @@ namespace EasySQL
             fromBuilder.Append(fromItem.ToString());
             sqlbuilder.Append(string.Format("{0}{1}", selectBuilder.ToString(), fromBuilder.ToString()));
             string existsWhere = qb.GetExistsWhere();
+            // 合并 EXISTS/NOT EXISTS 子查询的参数到主查询
+            qb.MergeSubQueryParameters();
             if (qb.Wherebuilder != null && qb.Wherebuilder.Length > 0)
             {
                 sqlbuilder.Append(string.Format("{0}WHERE (", qb.PrettyPrint ? System.Environment.NewLine : " "));

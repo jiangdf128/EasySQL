@@ -314,19 +314,25 @@ namespace EasySQL
 
         /// <summary>
         /// 添加 UNION / UNION ALL 合并查询。
+        /// <strong>子查询只生成 SQL，参数统一在主 Builder 上注册。</strong>
         /// </summary>
         /// <example>
         /// <code>
-        /// var active = new QueryBuilder()
+        /// // 子查询只定义结构，不注册参数
+        /// var qb1 = new QueryBuilder()
         ///     .From(su)
-        ///     .Where($"{su.GetStatus()} = {su.AsParam("Active")}")
-        ///     .AddParameter("Active", 1);
-        /// var inactive = new QueryBuilder()
+        ///     .Where($"{su.GetStatus()} = {su.AsParam("Active")}");
+        /// var qb2 = new QueryBuilder()
         ///     .From(su)
-        ///     .Where($"{su.GetStatus()} = {su.AsParam("Inactive")}")
-        ///     .AddParameter("Inactive", 0);
-        /// active.Union(inactive, isUnionAll: true);
-        /// string sql = active.BuildSql();
+        ///     .Where($"{su.GetStatus()} = {su.AsParam("Inactive")}");
+        ///
+        /// // 参数统一在主 Builder 上注册
+        /// qb1.Union(qb2, isUnionAll: true);
+        /// qb1.AddParameter("Active", 1)
+        ///    .AddParameter("Inactive", 0);
+        ///
+        /// string sql = qb1.BuildSql();
+        /// var users = conn.Query&lt;User&gt;(sql, qb1.Parameters.ToDynamicParameters());
         /// </code>
         /// </example>
         /// <param name="queryBuilder">要合并的查询（不能是自身）。</param>
@@ -427,6 +433,9 @@ namespace EasySQL
                         sb.Append(this._unionList[i].Value ? "UNION ALL" : "UNION");
                         sb.Append(this.PrettyPrint ? System.Environment.NewLine : " ");
                         sb.Append(this._unionList[i].Key.BuildSql());
+                        // 合并被 UNION 的查询的参数到主查询，确保执行时所有参数可用
+                        foreach (var kv in this._unionList[i].Key.Parameters)
+                            Parameters[kv.Key] = kv.Value;
                     }
                     sql = sb.ToString();
                 }
@@ -540,6 +549,26 @@ namespace EasySQL
         private string BuildSql(int rowLimit, int rowOffset, bool forCount)
         {
             return this.SQLDialect!.BuildSql(this, rowLimit, rowOffset, forCount);
+        }
+
+        /// <summary>
+        /// 将 EXISTS/NOT EXISTS 子查询的参数合并到主查询的 Parameters 中。
+        /// 由 BuildSql 内部自动调用，无需手动调用。
+        /// </summary>
+        internal void MergeSubQueryParameters()
+        {
+            if (this._existsList != null)
+            {
+                foreach (var sq in this._existsList)
+                    foreach (var kv in sq.Parameters)
+                        Parameters[kv.Key] = kv.Value;
+            }
+            if (this._notExistsList != null)
+            {
+                foreach (var sq in this._notExistsList)
+                    foreach (var kv in sq.Parameters)
+                        Parameters[kv.Key] = kv.Value;
+            }
         }
 
         /// <summary>
