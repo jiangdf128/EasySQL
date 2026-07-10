@@ -26,6 +26,7 @@ namespace EasySQL.Test
             DemoParameterized();
             DemoInBuilder();
             DemoExists();
+            DemoBuildIntoSql();
 
             Console.WriteLine("=== 演示结束 ===");
         }
@@ -266,6 +267,45 @@ namespace EasySQL.Test
 
             Print("EXISTS", qb.BuildSql());
         }
+
+        static void DemoBuildIntoSql()
+        {
+            Console.WriteLine("╔════════════════════════════════════════════════════╗");
+            Console.WriteLine("║  6 种数据库 BuildIntoSql（SELECT INTO / CTAS）    ║");
+            Console.WriteLine("╚════════════════════════════════════════════════════╝");
+            Console.WriteLine();
+
+            // 准备一个通用查询
+            BuildAndPrintIntoSql("SQL Server", () => { SQLDialectFactory.UseSqlServerDialect(); return new SqlServerDialect(); });
+            BuildAndPrintIntoSql("MySQL", () => { SQLDialectFactory.UseDialect("mysqlconnection"); return new MySQLDialect(); });
+            BuildAndPrintIntoSql("PostgreSQL", () => { SQLDialectFactory.UseDialect("npgsqlconnection"); return new PostgreSQLDialect(); });
+            BuildAndPrintIntoSql("Oracle", () => { SQLDialectFactory.UseDialect("oracleconnection"); return new OracleDialect(); });
+            BuildAndPrintIntoSql("SQLite", () => { SQLDialectFactory.UseDialect("sqliteconnection"); return new SQLiteDialect(); });
+            BuildAndPrintIntoSql("DB2", () => { SQLDialectFactory.UseDialect("db2connection"); return new DB2Dialect(); });
+
+            Console.WriteLine();
+        }
+
+        static void BuildAndPrintIntoSql(string label, Func<ISQLDialect> dialectFactory)
+        {
+            var dialect = dialectFactory();
+            var sa = new DemoUserTableDef("SA") { SQLDialect = dialect };
+            var sb = new DemoOrderTableDef("SB") { SQLDialect = dialect };
+
+            sa.Select(true, sa.Name, sa.Email);
+            sb.Select(true, sb.Amount);
+
+            sa.Join(sb, $"{sa.GetId()} = {sb.GetUserId()}");
+
+            var qb = new QueryBuilder().From(sa, sb)
+                .Where($"{sb.GetAmount()} > 100");
+
+            var tmp = new TempTableDef("#tmp_result", "Name", "Email", "Amount") { SQLDialect = dialect };
+
+            string sql = dialect.BuildIntoSql(qb, tmp.TableName, isTemp: true);
+            Print($"BuildIntoSql [{label}]", sql);
+        }
+
     }
 
     // 演示用的简短 TableDef 类
