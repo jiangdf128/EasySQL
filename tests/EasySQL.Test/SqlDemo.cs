@@ -272,32 +272,45 @@ namespace EasySQL.Test
     class DemoUserTableDef : TableDefBase
     {
         public const string TABLE = "Users";
+        public const string ID = "Id";
+        public const string NAME = "Name";
+        public const string EMAIL = "Email";
+        public const string STATUS = "Status";
+
         public override string TableName => TABLE;
         public DemoUserTableDef(string? alias = null, ISQLDialect? dialect = null) : base(alias ?? string.Empty, dialect) { }
+
         // 实例属性 — 返回原始字段名（用于 Select 多字段选取）
-        public string Id => "Id";
-        public string Name => "Name";
-        public string Email => "Email";
-        public string Status => "Status";
+        public string Id => ID;
+        public string Name => NAME;
+        public string Email => EMAIL;
+        public string Status => STATUS;
+
         // GetXxx 方法 — 返回带引号/前缀修饰的字段名
-        public string GetId(bool p = true) => QuoteField("Id", p);
-        public string GetName(bool p = true) => QuoteField("Name", p);
-        public string GetEmail(bool p = true) => QuoteField("Email", p);
-        public string GetStatus(bool p = true) => QuoteField("Status", p);
+        public string GetId(bool needPrefix = true) => QuoteField(ID, needPrefix);
+        public string GetName(bool needPrefix = true) => QuoteField(NAME, needPrefix);
+        public string GetEmail(bool needPrefix = true) => QuoteField(EMAIL, needPrefix);
+        public string GetStatus(bool needPrefix = true) => QuoteField(STATUS, needPrefix);
     }
 
     class DemoOrderTableDef : TableDefBase
     {
         public const string TABLE = "Orders";
+        public const string ID = "Id";
+        public const string USER_ID = "UserId";
+        public const string AMOUNT = "Amount";
+
         public override string TableName => TABLE;
         public DemoOrderTableDef(string? alias = null, ISQLDialect? dialect = null) : base(alias ?? string.Empty, dialect) { }
+
         // 实例属性 — 返回原始字段名（用于 Select 多字段选取）
-        public string Id => "Id";
-        public string UserId => "UserId";
-        public string Amount => "Amount";
+        public string Id => ID;
+        public string UserId => USER_ID;
+        public string Amount => AMOUNT;
+
         // GetXxx 方法 — 返回带引号/前缀修饰的字段名
-        public string GetId(bool p = true) => QuoteField("Id", p);
-        public string GetUserId(bool p = true) => QuoteField("UserId", p);
-        public string GetAmount(bool p = true) => QuoteField("Amount", p);
+        public string GetId(bool needPrefix = true) => QuoteField(ID, needPrefix);
+        public string GetUserId(bool needPrefix = true) => QuoteField(USER_ID, needPrefix);
+        public string GetAmount(bool needPrefix = true) => QuoteField(AMOUNT, needPrefix);
     }
 }
