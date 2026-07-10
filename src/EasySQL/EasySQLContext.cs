@@ -24,9 +24,9 @@ namespace EasySQL
     ///     {
     ///         return await _db.DoAsync(async conn =>
     ///         {
-    ///             var su = new UserSchema("u");
-    ///             su.Select(su.GetName());
-    ///             var qb = new QueryBuilder().From(su);
+    ///             var s = new UserSchema("u");
+    ///             s.Select(true, s.GetName());
+    ///             var qb = new QueryBuilder().From(s);
     ///             return await conn.QueryAsync&lt;User&gt;(qb.BuildSql());
     ///         });
     ///     }

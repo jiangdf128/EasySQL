@@ -87,9 +87,9 @@ namespace EasySQL.Test.Tests.Integration
                 conn.Insert(new OrderPayment { OrderId = order.Id, PayMethod = 1, Amount = 6999, Status = 2 });
 
                 // 复杂多表查询 → EasySQL
-                var sa = new UserSchema("A");
-                var sb = new OrderSchema("B");
-                var sc= new OrderPaymentSchema("C");
+                var sa = new UserSchema("SA");
+                var sb = new OrderSchema("SB");
+                var sc= new OrderPaymentSchema("SC");
 
 
                 sa.Select(true, sa.UserName);
@@ -147,17 +147,17 @@ namespace EasySQL.Test.Tests.Integration
                 var item = new OrderItem { OrderId = order.Id, ProductId = prod.Id, Quantity = 1, UnitPrice = 9999 };
                 conn.Insert(item);
 
-                var u = new UserSchema("u");
-                var o = new OrderSchema("o");
-                var i = new OrderItemSchema("i");
-                u.Select(true, u.UserName);
-                o.Select(true, o.OrderNo);
-                i.Select(true, i.Quantity, i.UnitPrice);
-                u.Join(o, $"{u.GetId()} = {o.GetUserId()}");
-                o.Join(i, $"{o.GetId()} = {i.GetOrderId()}");
+                var sa = new UserSchema("SA");
+                var sb = new OrderSchema("SB");
+                var sc = new OrderItemSchema("SC");
+                sa.Select(true, sa.UserName);
+                sb.Select(true, sb.OrderNo);
+                sc.Select(true, sc.Quantity, sc.UnitPrice);
+                sa.Join(sb, $"{sa.GetId()} = {sb.GetUserId()}");
+                sb.Join(sc, $"{sb.GetId()} = {sc.GetOrderId()}");
 
-                var qb = new QueryBuilder().From(u, o, i)
-                    .Where($"{o.GetOrderNo()} = 'ORD_JOIN'");
+                var qb = new QueryBuilder().From(sa, sb, sc)
+                    .Where($"{sb.GetOrderNo()} = 'ORD_JOIN'");
 
                 Assert.Single(conn.Query(qb.BuildSql(), qb.Parameters.ToDynamicParameters()));
                 CleanAll(conn);
@@ -191,11 +191,11 @@ namespace EasySQL.Test.Tests.Integration
                 conn.Insert(new OrderItem { OrderId = o1.Id, ProductId = p2.Id, Quantity = 1, UnitPrice = 299 });
                 conn.Insert(new OrderItem { OrderId = o2.Id, ProductId = p1.Id, Quantity = 1, UnitPrice = 99 });
 
-                var i = new OrderItemSchema("i");
-                i.Select(true, i.ProductId);
-                i.SelectExpression("SUM(Quantity) AS TotalQty");
-                var qb = new QueryBuilder().From(i)
-                    .GroupBy($"{i.GetProductId()}")
+                var s = new OrderItemSchema("i");
+                s.Select(true, s.ProductId);
+                s.SelectExpression("SUM(Quantity) AS TotalQty");
+                var qb = new QueryBuilder().From(s)
+                    .GroupBy($"{s.GetProductId()}")
                     .Having("SUM(Quantity) >= 2");
 
                 var rows = conn.Query(qb.BuildSql(), qb.Parameters.ToDynamicParameters()).ToList();
@@ -219,11 +219,11 @@ namespace EasySQL.Test.Tests.Integration
                 for (int i = 1; i <= 15; i++)
                     conn.Insert(new Order { UserId = user.Id, OrderNo = $"PAGE_{i:D3}", TotalAmount = i * 100 });
 
-                var o = new OrderSchema("o");
-                o.Select(true, o.OrderNo, o.TotalAmount);
-                var qb = new QueryBuilder().From(o)
-                    .Where($"{o.GetOrderNo()} LIKE 'PAGE_%'")
-                    .OrderBy($"{o.GetOrderNo()} ASC");
+                var s = new OrderSchema("o");
+                s.Select(true, s.OrderNo, s.TotalAmount);
+                var qb = new QueryBuilder().From(s)
+                    .Where($"{s.GetOrderNo()} LIKE 'PAGE_%'")
+                    .OrderBy($"{s.GetOrderNo()} ASC");
 
                 string sql = qb.BuildSql(rowLimit: 5, rowOffset: 5);
                 Assert.Contains(QueryBuilder.PagingTotalAlias, sql);
@@ -245,10 +245,10 @@ namespace EasySQL.Test.Tests.Integration
         {
             EasySQLContext.Default.Do(conn =>
             {
-                var u = new UserSchema("u");
-                u.Select(true, u.UserName);
-                var qb = new QueryBuilder().From(u)
-                    .Where($"{u.GetUserName()} = {u.AsParam("Name")}")
+                var s = new UserSchema("u");
+                s.Select(true, s.UserName);
+                var qb = new QueryBuilder().From(s)
+                    .Where($"{s.GetUserName()} = {s.AsParam("Name")}")
                     .AddParameter("Name", "test' OR '1'='1");
 
                 Assert.Contains("@Name", qb.BuildSql());

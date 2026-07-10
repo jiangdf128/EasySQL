@@ -467,18 +467,18 @@ namespace EasySQL
         /// </summary>
         /// <example>
         /// <code>
-        /// var su = new UserSchema("u");
-        /// var so = new OrderSchema("o");
+        /// var sa = new UserSchema("SA");
+        /// var sb = new OrderSchema("SB");
         ///
         /// // 单字段连接（类型安全，字段名变更时编译报错）
-        /// su.Join(so, $"{su.GetId()} = {so.GetUserId()}");
+        /// sa.Join(sb, $"{sa.GetId()} = {sb.GetUserId()}");
         ///
         /// // 多字段连接
-        /// su.Join(so, $"{su.GetId()} = {so.GetUserId()} " +
-        ///            $"AND {su.GetStatus()} = 1");
+        /// sa.Join(sb, $"{sa.GetId()} = {sb.GetUserId()} " +
+        ///            $"AND {sa.GetStatus()} = 1");
         ///
         /// // 注册到查询
-        /// qb.From(su, so);
+        /// qb.From(sa, sb);
         /// </code>
         /// </example>
         /// <param name="target">要连接的目标表 Schema。</param>

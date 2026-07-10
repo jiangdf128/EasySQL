@@ -12,23 +12,23 @@ namespace EasySQL
     /// <remarks>
     /// <h3>标准写法</h3>
     /// <code>
-    /// // ① 实例化 Schema（别名用 s 前缀，区别于 Entity 变量）
-    /// var su = new UserSchema("u");
-    /// var so = new OrderSchema("o");
+    /// // ① 实例化 Schema（多表按 sa/sb/sc 命名，别名全大写）
+    /// var sa = new UserSchema("SA");
+    /// var sb = new OrderSchema("SB");
     ///
     /// // ② 在各 Schema 上定义 SELECT 字段
-    /// su.Select(su.GetName(), su.GetEmail());
-    /// so.Select(so.GetAmount());
+    /// sa.Select(true, sa.GetName(), sa.GetEmail());
+    /// sb.Select(true, sb.GetAmount());
     ///
     /// // ③ Schema 之间定义 JOIN 关系
-    /// su.Join(so, $"{su.GetId()} = {so.GetUserId()}");
+    /// sa.Join(sb, $"{sa.GetId()} = {sb.GetUserId()}");
     ///
     /// // ④ QueryBuilder 一次性 FROM，然后 WHERE / ORDER BY
     /// var qb = new QueryBuilder()
-    ///     .From(su, so)
-    ///     .Where($"{su.GetStatus()} = {su.AsParam("Status")}")
+    ///     .From(sa, sb)
+    ///     .Where($"{sa.GetStatus()} = {sa.AsParam("Status")}")
     ///     .AddParameter("Status", 1)
-    ///     .OrderBy($"{su.GetName()} ASC");
+    ///     .OrderBy($"{sa.GetName()} ASC");
     ///
     /// string sql = qb.BuildSql();
     ///
@@ -124,16 +124,16 @@ namespace EasySQL
         /// <example>
         /// <code>
         /// // 单表
-        /// qb.From(su);
+        /// qb.From(sa);
         ///
         /// // 多表（JOIN 关系在 Schema 上定义）
-        /// su.Join(so, $"{su.GetId()} = {so.GetUserId()}");
-        /// qb.From(su, so);
+        /// sa.Join(sb, $"{sa.GetId()} = {sb.GetUserId()}");
+        /// qb.From(sa, sb);
         ///
         /// // 子查询
         /// var subQb = new QueryBuilder("sub")
-        ///     .From(su)
-        ///     .Where($"{su.GetStatus()} = {su.AsParam("Status")}")
+        ///     .From(sa)
+        ///     .Where($"{sa.GetStatus()} = {sa.AsParam("Status")}")
         ///     .AddParameter("Status", 1);
         /// qb.From(subQb);
         /// </code>
@@ -159,7 +159,7 @@ namespace EasySQL
         /// <example>
         /// <code>
         /// // 静态条件
-        /// qb.Where($"{su.GetStatus()} = 1");
+        /// qb.Where($"{sa.GetStatus()} = 1");
         ///
         /// // 参数化条件（防注入）— 配合 AsParam + AddParameter
         /// qb.Where($"{su.GetStatus()} = {su.AsParam("Status")}",
@@ -366,10 +366,10 @@ namespace EasySQL
         /// <code>
         /// // 查询有订单的用户
         /// var subQb = new QueryBuilder()
-        ///     .From(so)
-        ///     .Where($"{so.GetUserId()} = {su.GetId()}");
+        ///     .From(sb)
+        ///     .Where($"{sb.GetUserId()} = {sa.GetId()}");
         /// var qb = new QueryBuilder()
-        ///     .From(su)
+        ///     .From(sa)
         ///     .Exists(subQb);
         /// </code>
         /// </example>

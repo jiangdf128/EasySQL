@@ -42,20 +42,20 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             Console.WriteLine("========== 基本 SELECT ==========");
 
-            var su = new DemoUserSchema("u");
-            su.Select(su.GetName());
-            su.Select(su.GetEmail());
-            var qb = new QueryBuilder().From(su);
+            var s = new DemoUserSchema("u");
+            s.Select(s.GetName());
+            s.Select(s.GetEmail());
+            var qb = new QueryBuilder().From(s);
             Print("简单查询", qb.BuildSql());
 
-            su.ClearSelect();
-            su.Select();
-            var qb2 = new QueryBuilder().From(su);
+            s.ClearSelect();
+            s.Select();
+            var qb2 = new QueryBuilder().From(s);
             Print("全字段 *", qb2.BuildSql());
 
-            su.ClearSelect();
-            su.Select(su.GetStatus());
-            var qb3 = new QueryBuilder().From(su);
+            s.ClearSelect();
+            s.Select(s.GetStatus());
+            var qb3 = new QueryBuilder().From(s);
             qb3.IsDistinct = true;
             Print("DISTINCT", qb3.BuildSql());
         }
@@ -65,18 +65,18 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             Console.WriteLine("========== JOIN 连接 ==========");
 
-            var su = new DemoUserSchema("u");
-            var so = new DemoOrderSchema("o");
-            su.Select(su.GetName());
-            so.Select(so.GetAmount());
-            su.Join(so, "u.Id = o.UserId");
+            var s = new DemoUserSchema("u");
+            var sb = new DemoOrderSchema("o");
+            s.Select(s.GetName());
+            sb.Select(sb.GetAmount());
+            s.Join(sb, "u.Id = o.UserId");
 
-            var qb = new QueryBuilder().From(su);
+            var qb = new QueryBuilder().From(s);
             Print("INNER JOIN", qb.BuildSql());
 
-            su.ClearJoins();
-            su.LeftJoin(so, "u.Id = o.UserId");
-            var qb2 = new QueryBuilder().From(su);
+            s.ClearJoins();
+            s.LeftJoin(sb, "u.Id = o.UserId");
+            var qb2 = new QueryBuilder().From(s);
             Print("LEFT JOIN", qb2.BuildSql());
         }
 
@@ -85,19 +85,19 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             Console.WriteLine("========== WHERE / GROUP BY / ORDER BY ==========");
 
-            var su = new DemoUserSchema("u");
-            su.Select(su.GetName());
-            su.Select(su.GetEmail());
+            var s = new DemoUserSchema("u");
+            s.Select(s.GetName());
+            s.Select(s.GetEmail());
 
-            var qb = new QueryBuilder().From(su)
+            var qb = new QueryBuilder().From(s)
                 .Where("u.Status = 1", "u.Email IS NOT NULL")
                 .OrderBy("u.Name ASC");
             Print("条件 + 排序", qb.BuildSql());
 
-            su.ClearSelect();
-            su.Select(su.GetStatus());
-            su.SelectExpression("Count(1) AS Cnt");
-            var qb2 = new QueryBuilder().From(su)
+            s.ClearSelect();
+            s.Select(s.GetStatus());
+            s.SelectExpression("Count(1) AS Cnt");
+            var qb2 = new QueryBuilder().From(s)
                 .GroupBy("u.Status")
                 .Having("Count(1) > 5");
             Print("分组 + Having", qb2.BuildSql());
@@ -108,17 +108,17 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             Console.WriteLine("========== COUNT 计数 ==========");
 
-            var su = new DemoUserSchema("u");
-            su.Select(su.GetName());
+            var s = new DemoUserSchema("u");
+            s.Select(s.GetName());
 
-            var qb = new QueryBuilder().From(su)
+            var qb = new QueryBuilder().From(s)
                 .Where("u.Status = 1");
             Print("无分组 COUNT", qb.BuildCountSql());
 
-            su.ClearSelect();
-            su.Select(su.GetStatus());
-            su.SelectExpression("Count(1) AS Cnt");
-            var qb2 = new QueryBuilder().From(su)
+            s.ClearSelect();
+            s.Select(s.GetStatus());
+            s.SelectExpression("Count(1) AS Cnt");
+            var qb2 = new QueryBuilder().From(s)
                 .GroupBy("u.Status");
             Print("有分组 COUNT（子查询包装）", qb2.BuildCountSql());
         }
@@ -127,38 +127,38 @@ namespace EasySQL.Test
         {
             Console.WriteLine("========== 分页 ==========");
 
-            var su = new DemoUserSchema("u");
-            su.Select(su.GetName());
-            su.Select(su.GetEmail());
+            var s = new DemoUserSchema("u");
+            s.Select(s.GetName());
+            s.Select(s.GetEmail());
 
             // SQL Server（含 COUNT OVER，一次查询返回数据+总数）
             SQLDialectFactory.UseSqlServerDialect();
-            var qb1 = new QueryBuilder().From(su).OrderBy("u.Name ASC");
+            var qb1 = new QueryBuilder().From(s).OrderBy("u.Name ASC");
             Print($"SQL Server (含 {QueryBuilder.PagingTotalAlias} 计数列)", qb1.BuildSql(rowLimit: 10, rowOffset: 5));
 
             // MySQL
             SQLDialectFactory.UseDialect("mysqlconnection");
-            var qb2 = new QueryBuilder().From(su);
+            var qb2 = new QueryBuilder().From(s);
             Print("MySQL (LIMIT/OFFSET)", qb2.BuildSql(rowLimit: 10, rowOffset: 5));
 
             // PostgreSQL
             SQLDialectFactory.UseDialect("npgsqlconnection");
-            var qb3 = new QueryBuilder().From(su);
+            var qb3 = new QueryBuilder().From(s);
             Print("PostgreSQL (LIMIT/OFFSET)", qb3.BuildSql(rowLimit: 20, rowOffset: 0));
 
             // Oracle
             SQLDialectFactory.UseDialect("oracleconnection");
-            var qb4 = new QueryBuilder().From(su);
+            var qb4 = new QueryBuilder().From(s);
             Print("Oracle (OFFSET/FETCH)", qb4.BuildSql(rowLimit: 10, rowOffset: 5));
 
             // SQLite
             SQLDialectFactory.UseDialect("sqliteconnection");
-            var qb5 = new QueryBuilder().From(su);
+            var qb5 = new QueryBuilder().From(s);
             Print("SQLite (LIMIT/OFFSET)", qb5.BuildSql(rowLimit: 15, rowOffset: 0));
 
             // DB2
             SQLDialectFactory.UseDialect("db2connection");
-            var qb6 = new QueryBuilder().From(su);
+            var qb6 = new QueryBuilder().From(s);
             Print("DB2 (OFFSET/FETCH)", qb6.BuildSql(rowLimit: 10, rowOffset: 5));
         }
 
@@ -203,12 +203,12 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             Console.WriteLine("========== UNION ==========");
 
-            var su = new DemoUserSchema("u");
-            su.Select(su.GetName());
+            var s = new DemoUserSchema("u");
+            s.Select(s.GetName());
 
-            var qb1 = new QueryBuilder().From(su).Where("u.Status = 1");
+            var qb1 = new QueryBuilder().From(s).Where("u.Status = 1");
 
-            var qb2 = new QueryBuilder().From(su).Where("u.Status = 2");
+            var qb2 = new QueryBuilder().From(s).Where("u.Status = 2");
 
             qb1.Union(qb2, isUnionAll: true);
             Print("UNION ALL", qb1.BuildSql());
@@ -219,10 +219,10 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             Console.WriteLine("========== 参数化查询 ==========");
 
-            var su = new DemoUserSchema("u");
-            su.Select(su.GetName());
+            var s = new DemoUserSchema("u");
+            s.Select(s.GetName());
 
-            var qb = new QueryBuilder().From(su)
+            var qb = new QueryBuilder().From(s)
                 .Where("u.Id = @UserId", "u.Status = @Status")
                 .AddParameter("UserId", 123)
                 .AddParameter("Status", 1);
@@ -257,14 +257,14 @@ namespace EasySQL.Test
             SQLDialectFactory.UseSqlServerDialect();
             Console.WriteLine("========== EXISTS 子查询 ==========");
 
-            var su = new DemoUserSchema("u");
-            var so = new DemoOrderSchema("o");
-            su.Select(su.GetName());
+            var s = new DemoUserSchema("u");
+            var sb = new DemoOrderSchema("o");
+            s.Select(s.GetName());
 
-            var subQb = new QueryBuilder().From(so)
+            var subQb = new QueryBuilder().From(sb)
                 .Where("o.UserId = u.Id");
 
-            var qb = new QueryBuilder().From(su)
+            var qb = new QueryBuilder().From(s)
                 .Exists(subQb);
 
             Print("EXISTS", qb.BuildSql());

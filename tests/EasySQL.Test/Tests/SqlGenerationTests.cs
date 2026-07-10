@@ -61,11 +61,11 @@ namespace EasySQL.Test
         public void BuildSimpleSelect_ShouldGenerateCorrectSQL()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            su.Select(su.GetName());
-            su.Select(su.GetEmail());
+            var s = new TestUserSchema("u");
+            s.Select(s.GetName());
+            s.Select(s.GetEmail());
 
-            var qb = new QueryBuilder().From(su);
+            var qb = new QueryBuilder().From(s);
 
             var sql = qb.BuildSql();
             LogSql(sql);
@@ -76,10 +76,10 @@ namespace EasySQL.Test
         public void SelectAllFields_ShouldGenerateStar()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            su.Select();
+            var s = new TestUserSchema("u");
+            s.Select();
 
-            var qb = new QueryBuilder().From(su);
+            var qb = new QueryBuilder().From(s);
 
             var sql = qb.BuildSql();
             LogSql(sql);
@@ -90,10 +90,10 @@ namespace EasySQL.Test
         public void SelectDistinct_ShouldGenerateDistinctKeyword()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            su.Select(su.GetStatus());
+            var s = new TestUserSchema("u");
+            s.Select(s.GetStatus());
 
-            var qb = new QueryBuilder().From(su);
+            var qb = new QueryBuilder().From(s);
             qb.IsDistinct = true;
 
             var sql = qb.BuildSql();
@@ -108,10 +108,10 @@ namespace EasySQL.Test
         public void WhereClause_ShouldGenerateCorrectCondition()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            su.Select(su.GetName());
+            var s = new TestUserSchema("u");
+            s.Select(s.GetName());
 
-            var qb = new QueryBuilder().From(su)
+            var qb = new QueryBuilder().From(s)
                 .Where("u.Status = 1", "u.Email IS NOT NULL");
 
             var sql = qb.BuildSql();
@@ -123,11 +123,11 @@ namespace EasySQL.Test
         public void GroupByAndHaving_ShouldGenerateCorrectClauses()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            su.Select(su.GetStatus());
-            su.SelectExpression("Count(1) AS Cnt");
+            var s = new TestUserSchema("u");
+            s.Select(s.GetStatus());
+            s.SelectExpression("Count(1) AS Cnt");
 
-            var qb = new QueryBuilder().From(su)
+            var qb = new QueryBuilder().From(s)
                 .GroupBy("u.Status")
                 .Having("Count(1) > 5");
 
@@ -141,10 +141,10 @@ namespace EasySQL.Test
         public void OrderBy_ShouldGenerateCorrectSorting()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            su.Select(su.GetName(), su.GetEmail());
+            var s = new TestUserSchema("u");
+            s.Select(s.GetName(), s.GetEmail());
 
-            var qb = new QueryBuilder().From(su)
+            var qb = new QueryBuilder().From(s)
                 .OrderBy("u.Name ASC", "u.Email DESC");
 
             var sql = qb.BuildSql();
@@ -159,13 +159,13 @@ namespace EasySQL.Test
         public void InnerJoin_ShouldGenerateCorrectJoinClause()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            var so = new TestOrderSchema("o");
-            su.Select(su.GetName());
-            so.Select(so.GetAmount());
-            su.Join(so, "u.Id = o.UserId");
+            var s = new TestUserSchema("u");
+            var sb = new TestOrderSchema("o");
+            s.Select(s.GetName());
+            sb.Select(sb.GetAmount());
+            s.Join(sb, "u.Id = o.UserId");
 
-            var qb = new QueryBuilder().From(su);
+            var qb = new QueryBuilder().From(s);
 
             var sql = qb.BuildSql();
             LogSql(sql);
@@ -176,13 +176,13 @@ namespace EasySQL.Test
         public void LeftJoin_ShouldGenerateLeftOuterJoin()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            var so = new TestOrderSchema("o");
-            su.Select(su.GetName());
-            so.Select(so.GetAmount());
-            su.LeftJoin(so, "u.Id=o.UserId");
+            var s = new TestUserSchema("u");
+            var sb = new TestOrderSchema("o");
+            s.Select(s.GetName());
+            sb.Select(sb.GetAmount());
+            s.LeftJoin(sb, "u.Id=o.UserId");
 
-            var qb = new QueryBuilder().From(su);
+            var qb = new QueryBuilder().From(s);
 
             var sql = qb.BuildSql();
             LogSql(sql);
@@ -196,10 +196,10 @@ namespace EasySQL.Test
         public void BuildCountSql_NoGroupBy_ShouldGenerateSimpleCount()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            su.Select(su.GetName());
+            var s = new TestUserSchema("u");
+            s.Select(s.GetName());
 
-            var qb = new QueryBuilder().From(su)
+            var qb = new QueryBuilder().From(s)
                 .Where("u.Status = 1");
 
             var sql = qb.BuildCountSql();
@@ -212,11 +212,11 @@ namespace EasySQL.Test
         public void BuildCountSql_WithGroupBy_ShouldGenerateWrappedCount()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            su.Select(su.GetStatus());
-            su.SelectExpression("Count(1) AS Cnt");
+            var s = new TestUserSchema("u");
+            s.Select(s.GetStatus());
+            s.SelectExpression("Count(1) AS Cnt");
 
-            var qb = new QueryBuilder().From(su)
+            var qb = new QueryBuilder().From(s)
                 .GroupBy("u.Status");
 
             var sql = qb.BuildCountSql();
@@ -231,10 +231,10 @@ namespace EasySQL.Test
         public void Paging_SqlServer_WithOrderBy_ShouldUseOffsetFetch()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            su.Select(su.GetName(), su.GetEmail());
+            var s = new TestUserSchema("u");
+            s.Select(s.GetName(), s.GetEmail());
 
-            var qb = new QueryBuilder().From(su)
+            var qb = new QueryBuilder().From(s)
                 .OrderBy("u.Name ASC");
 
             var sql = qb.BuildSql(rowLimit: 10, rowOffset: 5);
@@ -246,11 +246,11 @@ namespace EasySQL.Test
         public void Paging_SqlServer_NoOrderBy_ShouldAddDummyOrderBy()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            su.Select(su.GetName());
+            var s = new TestUserSchema("u");
+            s.Select(s.GetName());
 
-            var qb = new QueryBuilder().From(su);
-            qb.OrderBy($" { su.GetEmail() } Asc");
+            var qb = new QueryBuilder().From(s);
+            qb.OrderBy($" { s.GetEmail() } Asc");
 
             var sql = qb.BuildSql(rowLimit: 10, rowOffset: 0);
             LogSql(sql);
@@ -265,10 +265,10 @@ namespace EasySQL.Test
         public void Paging_MySQL_ShouldUseLimitOffset()
         {
             SQLDialectFactory.UseDialect("mysqlconnection");
-            var su = new TestUserSchema("u");
-            su.Select(su.GetName());
+            var s = new TestUserSchema("u");
+            s.Select(s.GetName());
 
-            var qb = new QueryBuilder().From(su);
+            var qb = new QueryBuilder().From(s);
 
             var sql = qb.BuildSql(rowLimit: 10, rowOffset: 5);
             LogSql(sql);
@@ -280,10 +280,10 @@ namespace EasySQL.Test
         public void Paging_PostgreSQL_ShouldUseLimitOffset()
         {
             SQLDialectFactory.UseDialect("npgsqlconnection");
-            var su = new TestUserSchema("u");
-            su.Select(su.GetName());
+            var s = new TestUserSchema("u");
+            s.Select(s.GetName());
 
-            var qb = new QueryBuilder().From(su);
+            var qb = new QueryBuilder().From(s);
 
             var sql = qb.BuildSql(rowLimit: 20, rowOffset: 10);
             LogSql(sql);
@@ -298,10 +298,10 @@ namespace EasySQL.Test
         public void Paging_Oracle_ShouldUseRownumWrapper()
         {
             SQLDialectFactory.UseDialect("oracleconnection");
-            var su = new TestUserSchema("u");
-            su.Select(su.GetName());
+            var s = new TestUserSchema("u");
+            s.Select(s.GetName());
 
-            var qb = new QueryBuilder().From(su);
+            var qb = new QueryBuilder().From(s);
 
             var sql = qb.BuildSql(rowLimit: 10, rowOffset: 5);
             LogSql(sql);
@@ -345,11 +345,11 @@ namespace EasySQL.Test
         public void UpdateBuilder_NoWhere_ShouldPreventFullUpdate()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema();
+            var s = new TestUserSchema();
             var ex = Assert.Throws<InvalidOperationException>(() =>
             {
-                new UpdateBuilder(su)
-                    .Set(su.GetStatus(), 0)
+                new UpdateBuilder(s)
+                    .Set(s.GetStatus(), 0)
                     .BuildSql();
             });
             Assert.Contains("WHERE", ex.Message);
@@ -375,13 +375,13 @@ namespace EasySQL.Test
         public void Union_ShouldGenerateUnionClause()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            su.Select(su.GetName());
+            var s = new TestUserSchema("u");
+            s.Select(s.GetName());
 
-            var qb1 = new QueryBuilder().From(su)
+            var qb1 = new QueryBuilder().From(s)
                 .Where("u.Status = 1");
 
-            var qb2 = new QueryBuilder().From(su)
+            var qb2 = new QueryBuilder().From(s)
                 .Where("u.Status = 2");
 
             qb1.Union(qb2, isUnionAll: true);
@@ -397,10 +397,10 @@ namespace EasySQL.Test
         public void ParameterizedQuery_ShouldCollectParameters()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            su.Select(su.GetName());
+            var s = new TestUserSchema("u");
+            s.Select(s.GetName());
 
-            var qb = new QueryBuilder().From(su)
+            var qb = new QueryBuilder().From(s)
                 .Where("u.Id = @UserId", "u.Status = @Status")
                 .AddParameter("UserId", 123)
                 .AddParameter("Status", 1);
@@ -468,14 +468,14 @@ namespace EasySQL.Test
         public void Exists_ShouldGenerateExistsClause()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            var so = new TestOrderSchema("o");
-            su.Select(su.GetName());
+            var s = new TestUserSchema("u");
+            var sb = new TestOrderSchema("o");
+            s.Select(s.GetName());
 
-            var subQb = new QueryBuilder().From(so)
+            var subQb = new QueryBuilder().From(sb)
                 .Where("o.UserId = u.Id");
 
-            var qb = new QueryBuilder().From(su)
+            var qb = new QueryBuilder().From(s)
                 .Exists(subQb);
 
             var sql = qb.BuildSql();
@@ -490,10 +490,10 @@ namespace EasySQL.Test
         public void BuildTemplateSql_ShouldContainPlaceholders()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            su.Select(su.GetName());
+            var s = new TestUserSchema("u");
+            s.Select(s.GetName());
 
-            var qb = new QueryBuilder().From(su);
+            var qb = new QueryBuilder().From(s);
 
             var sql = qb.BuildTemplateSql();
             LogSql(sql);
@@ -507,10 +507,10 @@ namespace EasySQL.Test
         public void BuildTemplateSql_ShouldIgnoreStaticWhereAndOrderBy()
         {
             SQLDialectFactory.UseSqlServerDialect();
-            var su = new TestUserSchema("u");
-            su.Select(su.GetName());
+            var s = new TestUserSchema("u");
+            s.Select(s.GetName());
 
-            var qb = new QueryBuilder().From(su)
+            var qb = new QueryBuilder().From(s)
                 .Where("u.Status = 1")
                 .OrderBy("u.Name ASC");
 
