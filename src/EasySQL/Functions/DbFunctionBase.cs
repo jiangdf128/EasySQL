@@ -2,6 +2,10 @@ using System.Text;
 
 namespace EasySQL
 {
+    /// <summary>
+    /// 数据库函数抽象基类，提供各数据库函数的默认实现。
+    /// 具体数据库方言需继承此类并覆写差异化的函数实现。
+    /// </summary>
     public abstract class DbFunctionBase:IDbFunction
     {
         #region IDbFunction 成员

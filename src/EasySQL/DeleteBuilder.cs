@@ -123,7 +123,7 @@ namespace EasySQL
             string where = _wherebuilder?.ToString()
                 ?? throw new InvalidOperationException("DELETE 必须指定 WHERE 条件，防止误操作全表数据。如确认要删除全表，请使用 Where(\"1=1\")。");
 
-            return string.Format(DELETE_SQL, this.Table.SQLDialect!.QuoteTable(Table.IsPartialTableName ? Table.PartialTableName : Table.TableName), where);
+            return string.Format(DELETE_SQL, this.Table.SQLDialect!.QuoteTable(Table.IsPartialTableName ? Table.PartialTableName! : Table.TableName), where);
         }
     }
 }

@@ -34,7 +34,7 @@ namespace EasySQL
         /// <summary>
         /// 获取或设置拆表的名称，如果设置为null则认为是默认表名称。
         /// </summary>
-        string PartialTableName { get; set; }
+        string? PartialTableName { get; set; }
 
         /// <summary>
         /// 是否为拆表的名称。

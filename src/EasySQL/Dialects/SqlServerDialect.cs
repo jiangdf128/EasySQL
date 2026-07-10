@@ -50,6 +50,7 @@ namespace EasySQL
             return selectSql.Insert(fromIdx, $"\r\nINTO {QuoteTable(targetTable)}");
         }
 
+        /// <inheritdoc/>
         protected override string QuoteKeyWord(string word)
         {
             return $"[{word}]";

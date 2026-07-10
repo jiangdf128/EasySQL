@@ -19,6 +19,7 @@ namespace EasySQL
         /// <inheritdoc/>
         public override bool IsBracketJoin => false;
 
+        /// <inheritdoc/>
         protected override string QuoteKeyWord(string word)
         {
             return $"`{word}`";

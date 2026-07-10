@@ -169,7 +169,7 @@ namespace EasySQL
                 sb.Append(SetList[i]);
             }
 
-            return string.Format(UPDATE_SQL, this.Table.SQLDialect!.QuoteTable(Table.IsPartialTableName ? Table.PartialTableName : Table.TableName), sb.ToString(), where);
+            return string.Format(UPDATE_SQL, this.Table.SQLDialect!.QuoteTable(Table.IsPartialTableName ? Table.PartialTableName! : Table.TableName), sb.ToString(), where);
         }
     }
 }

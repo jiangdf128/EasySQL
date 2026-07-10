@@ -10,12 +10,12 @@ namespace EasySQL
         /// <summary>
         /// 数据库ID。
         /// </summary>
-        string DatabaseId { get; }
+        string? DatabaseId { get; }
 
         /// <summary>
         /// 数据库链接字符串
         /// </summary>
-        string ConnectString { get;  }
+        string? ConnectString { get;  }
 
         /// <summary>
         /// 配置连接信息。

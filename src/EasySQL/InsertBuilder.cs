@@ -84,7 +84,7 @@ namespace EasySQL
                 }
                 sb.Append(Fields[i]);
             }
-            return string.Format(INSERT_SQL, this.Table.SQLDialect!.QuoteTable(Table.IsPartialTableName ? Table.PartialTableName : Table.TableName), sb.ToString(), fromQuery);
+            return string.Format(INSERT_SQL, this.Table.SQLDialect!.QuoteTable(Table.IsPartialTableName ? Table.PartialTableName! : Table.TableName), sb.ToString(), fromQuery);
         }
 
         /// <summary>

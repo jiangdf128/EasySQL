@@ -57,9 +57,9 @@ namespace EasySQL
         /// </summary>
         public Dictionary<string, object> Parameters { get; } = new Dictionary<string, object>();
 
-        internal List<KeyValuePair<QueryBuilder, bool>> UnionList => _unionList;
-        internal List<QueryBuilder> ExistsList => _existsList;
-        internal List<QueryBuilder> NotExistsList => _notExistsList;
+        internal List<KeyValuePair<QueryBuilder, bool>>? UnionList => _unionList;
+        internal List<QueryBuilder>? ExistsList => _existsList;
+        internal List<QueryBuilder>? NotExistsList => _notExistsList;
 
         internal StringBuilder? Wherebuilder => _wherebuilder;
         internal StringBuilder? Groupbybuilder => _groupbybuilder;

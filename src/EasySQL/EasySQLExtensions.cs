@@ -19,7 +19,7 @@ namespace EasySQL
         /// <returns>已配置 FROM 子句的 <see cref="QueryBuilder"/> 实例。</returns>
         public static QueryBuilder Query(this TableDefBase[] tables, string? alias = null, ISQLDialect? dialect = null)
         {
-            var qb = new QueryBuilder(alias, dialect);
+            var qb = new QueryBuilder(alias ?? string.Empty, dialect);
             qb.From(tables);
             return qb;
         }

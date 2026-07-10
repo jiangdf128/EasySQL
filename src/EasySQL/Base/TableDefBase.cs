@@ -251,10 +251,9 @@ namespace EasySQL
             {
                 throw new Exception("It can't join(or be from) itself.");
             }
-            if (item is QueryBuilder)
+            if (item is QueryBuilder qb)
             {
-                QueryBuilder? qb = item as QueryBuilder;
-                if (qb.FromItems.Contains(this))
+                if (qb.FromItems?.Contains(this) == true)
                 {
                     //不能够把包含自身的查询作为自己的子查询，否则构造SQL语句的时候会造成无限循环，以及堆栈溢出。
                     throw new Exception("It can't join(or be from) the sub query that contains itself.");
@@ -355,7 +354,7 @@ namespace EasySQL
             {
                 this.Select();
             }
-            var qb = new QueryBuilder(alias, this.SQLDialect);
+            var qb = new QueryBuilder(alias ?? string.Empty, this.SQLDialect);
             qb.From(this);
             return qb;
         }
@@ -463,7 +462,7 @@ namespace EasySQL
 
         /// <summary>
         /// INNER JOIN 连接。在 TableDef 实例间定义连接关系，
-        /// 然后通过 <see cref="QueryBuilder.From(System.TableDefBase[])" /> 一次性注册到查询中。
+        /// 然后通过 <see cref="QueryBuilder.From(TableDefBase[])" /> 一次性注册到查询中。
         /// </summary>
         /// <example>
         /// <code>
@@ -683,7 +682,8 @@ namespace EasySQL
         {
             string alias;
             alias = (this.Alias != null && this.Alias.Trim().Length > 0) ? string.Format(" {0}", this.Alias.Trim()) : string.Empty;
-            return string.Format("{0}{1}", ((this is QueryBuilder) ? this.TableName : this.SQLDialect!.QuoteTable( this.IsPartialTableName? this.PartialTableName: this.TableName)), alias);
+            string tableName = this.IsPartialTableName ? this.PartialTableName! : this.TableName;
+            return string.Format("{0}{1}", ((this is QueryBuilder) ? this.TableName : this.SQLDialect!.QuoteTable(tableName)), alias);
         }
 
         /// <summary>
