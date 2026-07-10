@@ -74,13 +74,13 @@ namespace EasySQL
 
                 foreach (var db in options.Proxies)
                 {
-                    if (_dbs.ContainsKey(db.DatabaseId))
+                    if (db.DatabaseId != null && _dbs.ContainsKey(db.DatabaseId))
                     {
                         throw new InvalidOperationException(
                             $"数据库 ID \"{db.DatabaseId}\" 重复注册，每个 ID 必须唯一。");
                     }
 
-                    _dbs.Add(db.DatabaseId, db);
+                    _dbs.Add(db.DatabaseId!, db);
                     _defaultDb ??= db;
                 }
             }

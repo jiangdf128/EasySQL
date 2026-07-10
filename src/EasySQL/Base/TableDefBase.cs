@@ -258,6 +258,7 @@ namespace EasySQL
                     //不能够把包含自身的查询作为自己的子查询，否则构造SQL语句的时候会造成无限循环，以及堆栈溢出。
                     throw new Exception("It can't join(or be from) the sub query that contains itself.");
                 }
+                if (qb.FromItems != null)
                 foreach (TableDefBase fitem in qb.FromItems)
                 {
                     Check(fitem);

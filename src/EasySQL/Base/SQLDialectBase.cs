@@ -55,7 +55,7 @@ namespace EasySQL
             if (!(join.TargetTableDef is QueryBuilder))
             {
                 //如果不是子查询，则需要进行Quote操作。
-                tableName = this.QuoteTable(join.TargetTableDef.IsPartialTableName ? join.TargetTableDef.PartialTableName : join.TargetTableDef.TableName);
+                tableName = this.QuoteTable(join.TargetTableDef.IsPartialTableName ? join.TargetTableDef.PartialTableName! : join.TargetTableDef.TableName);
             }
             alias = (join.TargetTableDef.Alias != null && join.TargetTableDef.Alias.Trim().Length > 0) ?$" {join.TargetTableDef.Alias.Trim()}" : string.Empty;
             return $"{joinClause}{tableName}{alias} on {join.OnClause}";
