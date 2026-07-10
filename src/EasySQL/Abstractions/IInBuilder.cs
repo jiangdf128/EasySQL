@@ -2,6 +2,10 @@ using System;
 
 namespace EasySQL
 {
+    /// <summary>
+    /// SQL IN 子句值构造器接口，用于将大量值分批构造为多组 IN 子句，
+    /// 主要解决 Oracle 等数据库对 IN 列表元素数量的限制。
+    /// </summary>
     public interface IInBuilder
     {
         /// <summary>

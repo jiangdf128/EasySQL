@@ -10,11 +10,13 @@ namespace EasySQL
 
         #region DbFunctionBase 成员
 
+        /// <inheritdoc/>
         public override string IsNull(string field1, string field2)
         {
             return string.Format("ifnull({0},{1})", field1, field2);
         }
 
+        /// <inheritdoc/>
         public override string Concat(string field1, params string[] fields)
         {
             StringBuilder sb = new StringBuilder(field1);
@@ -25,43 +27,51 @@ namespace EasySQL
             return sb.ToString();
         }
 
+        /// <inheritdoc/>
         public override string Length(string field)
         {
             return string.Format("length({0})", field);
         }
 
+        /// <inheritdoc/>
         public override string SubString(string field, int start, int length)
         {
             return string.Format("substr({0},{1},{2})", field, start, length);
         }
 
+        /// <inheritdoc/>
         public override string ToChar(string field)
         {
             //SqlLite 不区分数据类型，不用转换。
             return string.Format("{0}", field);
         }
 
+        /// <inheritdoc/>
         public override string Replace(string field, string oitem, string nitem)
         {
             return string.Format("replace({0},{1},{2})", field, oitem, nitem);
         }
 
+        /// <inheritdoc/>
         public override string CharIndex(string field, string item, int start)
         {
             //SQLite的搜索位置有点不一样。
             return string.Format("charindex({0},{1},{2})", item, field, start);
         }
 
+        /// <inheritdoc/>
         public override string Sysdate
         {
             get { return "datetime('now','localtime')"; }
         }
 
+        /// <inheritdoc/>
         public override string Truncate(string datefield)
         {
             return string.Format("date({0})", datefield);
         }
 
+        /// <inheritdoc/>
         public override string DateAdd(DatePart datepart, string numberExpression, string datefield)
         {
             string function = string.Empty;
@@ -83,6 +93,7 @@ namespace EasySQL
             return string.Format(function, datefield, numberExpression);
         }
 
+        /// <inheritdoc/>
         public override string DateDiff(DatePart datepart, string startdate, string enddate)
         {
             string function = string.Empty;
@@ -104,36 +115,43 @@ namespace EasySQL
             return string.Format(function, startdate, enddate);
         }
 
+        /// <inheritdoc/>
         public override string Year(string field)
         {
             return string.Format("cast(strftime('%Y',{0}) as integer)", field);
         }
 
+        /// <inheritdoc/>
         public override string Month(string field)
         {
             return string.Format("cast(strftime('%m',{0}) as integer)", field);
         }
 
+        /// <inheritdoc/>
         public override string Day(string field)
         {
             return string.Format("cast(strftime('%d',{0}) as integer)", field);
         }
 
+        /// <inheritdoc/>
         public override string Hour(string field)
         {
             return string.Format("cast(strftime('%H',{0}) as integer)", field);
         }
 
+        /// <inheritdoc/>
         public override string Minute(string field)
         {
             return string.Format("cast(strftime('%M',{0}) as integer)", field);
         }
 
+        /// <inheritdoc/>
         public override string WeekDay(string field)
         {
             return string.Format("cast(strftime('%w',{0}) as integer)", field);
         }
 
+        /// <inheritdoc/>
         public override string ServerTimeSql
         {
             get { return "select datetime('now','localtime')"; }

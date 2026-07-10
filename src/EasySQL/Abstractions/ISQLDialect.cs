@@ -1,5 +1,10 @@
 namespace EasySQL
 {
+    /// <summary>
+    /// SQL 方言接口，定义各数据库在字段引号、表名引号、关键字转义、
+    /// 连接语法、分页语法等方面的差异。通过 <see cref="SQLDialectFactory"/>
+    /// 可根据数据库连接自动匹配合适的方言实现。
+    /// </summary>
     public interface ISQLDialect
     {
 

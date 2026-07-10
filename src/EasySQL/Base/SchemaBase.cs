@@ -11,8 +11,14 @@ namespace EasySQL
     {
         internal List<JoinCondition> Joins { private set; get; }
         internal List<string> SelectFields { get; set; }
-        protected Dictionary<string, string> FieldAliases { get; set; }
-        protected string partialTableName = null;
+        /// <summary>
+        /// 字段名与别名的映射字典，用于 Select 时自动关联别名。
+        /// </summary>
+        protected Dictionary<string, string>? FieldAliases { get; set; }
+        /// <summary>
+        /// 分表名称，非 null 且与 <see cref="TableName"/> 不同时视为分表。
+        /// </summary>
+        protected string? partialTableName = null;
 
         /// <summary>
         /// 获取Selected Fields.

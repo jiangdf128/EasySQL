@@ -4,6 +4,10 @@ using System.Collections.Generic;
 using System.Data;
 namespace EasySQL
 {
+    /// <summary>
+    /// SQL 方言工厂类，根据数据库连接类型自动匹配对应的方言。
+    /// 默认使用 SQL Server 方言。
+    /// </summary>
     public static class SQLDialectFactory
     {
         private static readonly object _lock = new object();
@@ -62,6 +66,10 @@ namespace EasySQL
             }
         }
 
+        /// <summary>
+        /// 根据名称切换默认方言。
+        /// </summary>
+        /// <param name="name">方言名称，对应连接类型的小写类名（如 "sqlconnection"）。</param>
         public static void UseDialect(string name)
         {
             var dialect = GetDialect(name);
@@ -75,11 +83,20 @@ namespace EasySQL
             }
         }
 
+        /// <summary>
+        /// 根据数据库连接对象自动检测并切换方言。
+        /// </summary>
+        /// <param name="connection">数据库连接对象。</param>
         public static void UseDialect(IDbConnection connection)
         {
             UseDialect(connection.GetType().Name.ToLower());
         }
 
+        /// <summary>
+        /// 根据名称获取对应的方言实例，未找到则返回 null。
+        /// </summary>
+        /// <param name="name">方言名称。</param>
+        /// <returns>方言实例，未找到时返回 null。</returns>
         public static ISQLDialect GetDialect(string name)
         {
             if (dialectDictionary.ContainsKey(name))
@@ -89,16 +106,27 @@ namespace EasySQL
             return null;
         }
 
+        /// <summary>
+        /// 根据数据库连接对象获取对应的方言实例。
+        /// </summary>
+        /// <param name="connection">数据库连接对象。</param>
+        /// <returns>对应的方言实例。</returns>
         public static ISQLDialect GetDialect(IDbConnection connection)
         {
             return GetDialect(connection.GetType().Name.ToLower());
         }
 
+        /// <summary>
+        /// 切换到 SQL Server 方言。
+        /// </summary>
         public static void UseSqlServerDialect()
         {
             DefaultDialect = GetDialect(sqlconnection);
         }
 
+        /// <summary>
+        /// 切换到 PostgreSQL 方言。
+        /// </summary>
         public static void UsePostgreSQLDialect()
         {
             DefaultDialect = GetDialect(npgsqlconnection);

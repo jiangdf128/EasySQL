@@ -2,14 +2,20 @@ using System.Collections.Generic;
 
 namespace EasySQL
 {
+    /// <summary>
+    /// PostgreSQL 数据库方言实现。
+    /// </summary>
     public class PostgreSQLDialect:SQLDialectBase
     {
         static readonly IDbFunction dbFunc = new PostgreSQLFunctions();
 
+        /// <inheritdoc/>
         public override string DialectName { get { return "PostgreSQL"; } }
 
+        /// <inheritdoc/>
         public override IDbFunction Func { get { return dbFunc; } }
 
+        /// <inheritdoc/>
         public override bool IsBracketJoin => false;
 
         protected override string QuoteKeyWord(string word)
@@ -17,6 +23,7 @@ namespace EasySQL
             return $"\"{word}\"";
         }
 
+        /// <inheritdoc/>
         public override bool IsKeyWord(string word)
         {
             return keyWords.Contains(word.ToUpper());

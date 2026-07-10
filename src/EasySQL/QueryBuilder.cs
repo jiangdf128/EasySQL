@@ -381,6 +381,10 @@ namespace EasySQL
             return this.SQLDialect.BuildSql(this, rowLimit, rowOffset, forCount);
         }
 
+        /// <summary>
+        /// 获取注册的 EXISTS / NOT EXISTS 子查询条件字符串。
+        /// </summary>
+        /// <returns>拼接好的 EXISTS/NOT EXISTS 子句（AND 连接）。</returns>
         public string GetExistsWhere()
         {
             StringBuilder existsBuilder = new StringBuilder();

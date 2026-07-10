@@ -3,12 +3,29 @@ using System.Text;
 
 namespace EasySQL
 {
+    /// <summary>
+    /// SQL 方言抽象基类，提供 <see cref="ISQLDialect"/> 的默认实现。
+    /// 包含 SQL 构建的核心逻辑（SELECT/FROM/JOIN/WHERE/GROUP BY/ORDER BY）
+    /// 以及 7 种数据库的分页语法支持。子类需覆写 <see cref="DialectName"/>、
+    /// <see cref="Func"/> 和 <see cref="QuoteKeyWord"/>。
+    /// </summary>
     public abstract class SQLDialectBase : ISQLDialect
     {
+        /// <summary>
+        /// 获取数据库方言名称，如 "SQLServer"、"MySQL"、"PostgreSQL" 等。
+        /// </summary>
         public abstract string DialectName { get; }
 
+        /// <summary>
+        /// 获取该方言对应的数据库函数集。
+        /// </summary>
         public abstract IDbFunction Func { get; }
 
+        /// <summary>
+        /// 翻译连接条件为完整的 JOIN 子句（含 ON 条件）。
+        /// </summary>
+        /// <param name="join">连接条件对象。</param>
+        /// <returns>完整的 JOIN 子句字符串。</returns>
         public virtual string GetJoinClause(JoinCondition join)
         {
             string joinClause, tableName, alias;
@@ -34,8 +51,18 @@ namespace EasySQL
             return (this.DialectName == "Jet") ? $"{joinClause}{tableName}{alias} on ({join.OnClause})" : $"{joinClause}{tableName}{alias} on {join.OnClause}";
         }
 
+        /// <summary>
+        /// 判断指定词是否为该数据库的保留关键字。默认返回 false。
+        /// </summary>
+        /// <param name="word">要检查的词。</param>
+        /// <returns>是保留关键字则为 true。</returns>
         public virtual bool IsKeyWord(string word) { return false; }
 
+        /// <summary>
+        /// 修饰字段名，如果是保留关键字则进行转义处理。
+        /// </summary>
+        /// <param name="fieldName">字段名称。</param>
+        /// <returns>安全的字段引用字符串。</returns>
         public virtual string QuoteField(string fieldName)
         {
             if (this.IsKeyWord(fieldName))
@@ -45,6 +72,11 @@ namespace EasySQL
             return fieldName;
         }
 
+        /// <summary>
+        /// 修饰表名，如果是保留关键字则进行转义处理。
+        /// </summary>
+        /// <param name="tableName">表名称。</param>
+        /// <returns>安全的表名引用字符串。</returns>
         public virtual string QuoteTable(string tableName)
         {
             if (this.IsKeyWord(tableName))
@@ -54,6 +86,11 @@ namespace EasySQL
             return tableName;
         }
 
+        /// <summary>
+        /// 为保留关键字添加转义引号。子类覆写以使用各数据库特定的引号字符。
+        /// </summary>
+        /// <param name="word">保留关键字。</param>
+        /// <returns>转义后的关键字字符串。</returns>
         protected virtual string QuoteKeyWord(string word) { return word; }
 
         /// <summary>
@@ -117,6 +154,15 @@ namespace EasySQL
 
         #endregion
 
+        /// <summary>
+        /// 构建完整的 SQL 查询语句。
+        /// 包含 SELECT、FROM、JOIN、WHERE、GROUP BY、HAVING、ORDER BY 及分页子句的生成。
+        /// </summary>
+        /// <param name="qb">查询构建器实例。</param>
+        /// <param name="rowLimit">返回记录数上限，0 表示不限制。</param>
+        /// <param name="rowOffset">偏移行数，从 0 开始。</param>
+        /// <param name="forCount">是否生成 COUNT 计数语句。</param>
+        /// <returns>完整的 SQL 查询语句字符串。</returns>
         public virtual string BuildSql(QueryBuilder qb, int rowLimit, int rowOffset, bool forCount)
         {
             StringBuilder selectBuilder = new StringBuilder((!qb.IsDistinct || forCount) ? "SELECT " : "SELECT DISTINCT ");

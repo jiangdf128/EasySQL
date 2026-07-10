@@ -8,36 +8,43 @@ namespace EasySQL
 
         #region DbFunctionBase 成员
 
+        /// <inheritdoc/>
         public override string ToChar(string field)
         {
             return string.Format("cast({0} as varchar)", field);
         }
 
+        /// <inheritdoc/>
         public override string Replace(string field, string oitem, string nitem)
         {
             return string.Format("replace({0},{1},{2})", field, oitem, nitem);
         }
 
+        /// <inheritdoc/>
         public override string CharIndex(string field, string item, int start)
         {
             return string.Format("charindex({0},{1},{2})",field,item,start);
         }
 
+        /// <inheritdoc/>
         public override string Trim(string field)
         {
             return string.Format("ltrim(rtrim({0}))", field);
         }
 
+        /// <inheritdoc/>
         public override string Sysdate
         {
             get { return "getdate()"; }
         }
 
+        /// <inheritdoc/>
         public override string Truncate(string datefield)
         {
             return string.Format("cast(convert(varchar(10),{0},102) as datetime)", datefield);
         }
 
+        /// <inheritdoc/>
         public override string DateAdd(DatePart datepart, string numberExpression, string datefield)
         {
             string function = "dateadd({0},{1},{2})";
@@ -60,6 +67,7 @@ namespace EasySQL
             return string.Format(function, part, numberExpression, datefield);
         }
 
+        /// <inheritdoc/>
         public override string DateDiff(DatePart datepart, string startdate, string enddate)
         {
             string function = "datediff({0},{1},{2})";
@@ -82,21 +90,25 @@ namespace EasySQL
             return string.Format(function, part, startdate, enddate);
         }
 
+        /// <inheritdoc/>
         public override string Hour(string field)
         {
             return string.Format("datepart(hour,{0})", field);
         }
 
+        /// <inheritdoc/>
         public override string Minute(string field)
         {
             return string.Format("datepart(minute,{0})", field);
         }
 
+        /// <inheritdoc/>
         public override string WeekDay(string field)
         {
             return string.Format("datepart(dw,{0})", field);
         }
 
+        /// <inheritdoc/>
         public override string ServerTimeSql
         {
             get { return "select getdate()"; }

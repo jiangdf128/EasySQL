@@ -1,12 +1,12 @@
 namespace EasySQL
 {
     /// <summary>
-    /// Data row version interface.
+    /// 数据行版本控制接口，实体类实现此接口可为数据行提供乐观并发控制。
     /// </summary>
     public interface IVersion
     {
         /// <summary>
-        /// Data row version value.
+        /// 数据行版本号，每次更新时递增，用于检测并发冲突。
         /// </summary>
         int Version { get; set; }
     }

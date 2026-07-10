@@ -2,14 +2,20 @@ using System.Collections.Generic;
 
 namespace EasySQL
 {
+    /// <summary>
+    /// SQL Server 数据库方言实现。
+    /// </summary>
     public class SqlServerDialect :SQLDialectBase
     {
         static readonly IDbFunction dbFunc = new SqlServerFunctions();
 
+        /// <inheritdoc/>
         public override string DialectName  { get { return "SQLServer"; } }
 
+        /// <inheritdoc/>
         public override IDbFunction Func { get { return dbFunc; } }
 
+        /// <inheritdoc/>
         public override bool IsBracketJoin => false;
 
         protected override string QuoteKeyWord(string word)
@@ -17,6 +23,7 @@ namespace EasySQL
             return $"[{word}]";
         }
 
+        /// <inheritdoc/>
         public override bool IsKeyWord(string word)
         {
             return keyWords.Contains(word.ToUpper());

@@ -2,6 +2,10 @@ using System.Data;
 
 namespace EasySQL
 {
+    /// <summary>
+    /// 数据库连接代理抽象基类，实现了 <see cref="IDbProxy"/> 的基本功能。
+    /// 子类只需覆写 <see cref="Open"/> 方法以提供特定数据库的连接实例。
+    /// </summary>
     public abstract class DbProxyBase:IDbProxy
     {
         /// <summary>

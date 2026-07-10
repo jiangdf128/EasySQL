@@ -11,16 +11,19 @@ namespace EasySQL
         #region DbFunctionBase 成员
 
 
+        /// <inheritdoc/>
         public override string ToInteger(string field)
         {
             return string.Format("cast({0} as integer)", field);
         }
 
+        /// <inheritdoc/>
         public override string IsNull(string field1, string field2)
         {
             return string.Format("coalesce({0},{1})", field1, field2);
         }
 
+        /// <inheritdoc/>
         public override string Concat(string field1, params string[] fields)
         {
             StringBuilder sb = new StringBuilder(field1);
@@ -31,21 +34,25 @@ namespace EasySQL
             return sb.ToString();
         }
 
+        /// <inheritdoc/>
         public override string Length(string field)
         {
             return string.Format("length({0})", field);
         }
 
+        /// <inheritdoc/>
         public override string ToChar(string field)
         {
             return string.Format("cast({0} as varchar)", field);
         }
 
+        /// <inheritdoc/>
         public override string Replace(string field, string oitem, string nitem)
         {
             return string.Format("replace({0},{1},{2})", field, oitem, nitem);
         }
 
+        /// <inheritdoc/>
         public override string CharIndex(string field, string item, int start)
         {
             //db2的搜索位置有点不一样。
@@ -53,17 +60,20 @@ namespace EasySQL
         }
 
 
+        /// <inheritdoc/>
         public override string Sysdate
         {
             get { return "now()"; }
         }
 
+        /// <inheritdoc/>
         public override string Truncate(string datefield)
         {
             return string.Format("date({0})", datefield);
         }
 
 
+        /// <inheritdoc/>
         public override string DateAdd(DatePart datepart, string numberExpression, string datefield)
         {
             string function = "{0}+{1} {2}";
@@ -86,6 +96,7 @@ namespace EasySQL
             return string.Format(function, datefield, numberExpression, part);
         }
 
+        /// <inheritdoc/>
         public override string DateDiff(DatePart datepart, string startdate, string enddate)
         {
             string function = string.Empty;
@@ -108,36 +119,43 @@ namespace EasySQL
 
         }
 
+        /// <inheritdoc/>
         public override string Year(string field)
         {
             return $"extract(year from {field})";
         }
 
+        /// <inheritdoc/>
         public override string Month(string field)
         {
             return $"extract(month from {field})";
         }
 
+        /// <inheritdoc/>
         public override string Day(string field)
         {
             return $"extract(day from {field})";
         }
 
+        /// <inheritdoc/>
         public override string Hour(string field)
         {
             return $"extract(hour from {field})";
         }
 
+        /// <inheritdoc/>
         public override string Minute(string field)
         {
             return $"extract(minute from {field})";
         }
 
+        /// <inheritdoc/>
         public override string WeekDay(string field)
         {
             return $"abs(date({field})-'2018-04-29'+1)%7";
         }
 
+        /// <inheritdoc/>
         public override string ServerTimeSql
         {
             get { return "select now()"; }

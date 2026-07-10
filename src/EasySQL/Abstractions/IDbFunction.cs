@@ -1,5 +1,10 @@
 namespace EasySQL
 {
+    /// <summary>
+    /// 数据库函数接口，定义跨数据库通用的 SQL 函数抽象。
+    /// 包括字符串处理、日期运算、数学计算、位运算等 30 余个函数，
+    /// 每种数据库方言提供各自的实现以适配语法差异。
+    /// </summary>
     public interface IDbFunction
     {
         /// <summary>
