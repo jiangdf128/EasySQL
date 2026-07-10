@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>EasySQL</RootNamespace>
     <!-- NuGet Package Metadata -->
-    <PackageId>EasySQL.SqlBuilder</PackageId>
+    <PackageId>EasySQL</PackageId>
     <Version>1.0.4</Version>
     <Authors>jiangdefu</Authors>
     <Description>
