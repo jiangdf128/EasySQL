@@ -17,8 +17,8 @@ namespace EasySQL
     /// var sb = new OrderTableDef("SB");
     ///
     /// // ② 在各 TableDef 上定义 SELECT 字段
-    /// sa.Select(true, sa.GetName(), sa.GetEmail());
-    /// sb.Select(true, sb.GetAmount());
+    /// sa.Select(true, sa.Name, sa.Email);
+    /// sb.Select(true, sb.Amount);
     ///
     /// // ③ TableDef 之间定义 JOIN 关系
     /// sa.Join(sb, $"{sa.GetId()} = {sb.GetUserId()}");

@@ -43,8 +43,7 @@ namespace EasySQL.Test
             Console.WriteLine("========== 基本 SELECT ==========");
 
             var s = new DemoUserTableDef("u");
-            s.Select(s.GetName());
-            s.Select(s.GetEmail());
+            s.Select(true, s.Name, s.Email);
             var qb = new QueryBuilder().From(s);
             Print("简单查询", qb.BuildSql());
 
@@ -86,8 +85,7 @@ namespace EasySQL.Test
             Console.WriteLine("========== WHERE / GROUP BY / ORDER BY ==========");
 
             var s = new DemoUserTableDef("u");
-            s.Select(s.GetName());
-            s.Select(s.GetEmail());
+            s.Select(true, s.Name, s.Email);
 
             var qb = new QueryBuilder().From(s)
                 .Where("u.Status = 1", "u.Email IS NOT NULL")
@@ -128,8 +126,7 @@ namespace EasySQL.Test
             Console.WriteLine("========== 分页 ==========");
 
             var s = new DemoUserTableDef("u");
-            s.Select(s.GetName());
-            s.Select(s.GetEmail());
+            s.Select(true, s.Name, s.Email);
 
             // SQL Server（含 COUNT OVER，一次查询返回数据+总数）
             SQLDialectFactory.UseSqlServerDialect();
@@ -277,6 +274,12 @@ namespace EasySQL.Test
         public const string TABLE = "Users";
         public override string TableName => TABLE;
         public DemoUserTableDef(string? alias = null, ISQLDialect? dialect = null) : base(alias ?? string.Empty, dialect) { }
+        // 实例属性 — 返回原始字段名（用于 Select 多字段选取）
+        public string Id => "Id";
+        public string Name => "Name";
+        public string Email => "Email";
+        public string Status => "Status";
+        // GetXxx 方法 — 返回带引号/前缀修饰的字段名
         public string GetId(bool p = true) => QuoteField("Id", p);
         public string GetName(bool p = true) => QuoteField("Name", p);
         public string GetEmail(bool p = true) => QuoteField("Email", p);
@@ -288,6 +291,11 @@ namespace EasySQL.Test
         public const string TABLE = "Orders";
         public override string TableName => TABLE;
         public DemoOrderTableDef(string? alias = null, ISQLDialect? dialect = null) : base(alias ?? string.Empty, dialect) { }
+        // 实例属性 — 返回原始字段名（用于 Select 多字段选取）
+        public string Id => "Id";
+        public string UserId => "UserId";
+        public string Amount => "Amount";
+        // GetXxx 方法 — 返回带引号/前缀修饰的字段名
         public string GetId(bool p = true) => QuoteField("Id", p);
         public string GetUserId(bool p = true) => QuoteField("UserId", p);
         public string GetAmount(bool p = true) => QuoteField("Amount", p);

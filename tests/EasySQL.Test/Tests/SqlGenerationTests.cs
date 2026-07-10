@@ -31,6 +31,13 @@ namespace EasySQL.Test
             public override string TableName => TABLE;
             public TestUserTableDef(string? alias = null, ISQLDialect? dialect = null) : base(alias ?? string.Empty, dialect) { }
 
+            // 实例属性 — 返回原始字段名（用于 Select 多字段选取）
+            public string Id => ID;
+            public string Name => NAME;
+            public string Email => EMAIL;
+            public string Status => STATUS;
+
+            // GetXxx 方法 — 返回带引号/前缀修饰的字段名
             public string GetId(bool needPrefix = true) => QuoteField(ID, needPrefix);
             public string GetName(bool needPrefix = true) => QuoteField(NAME, needPrefix);
             public string GetEmail(bool needPrefix = true) => QuoteField(EMAIL, needPrefix);
@@ -48,6 +55,13 @@ namespace EasySQL.Test
             public override string TableName => TABLE;
             public TestOrderTableDef(string? alias = null, ISQLDialect? dialect = null) : base(alias ?? string.Empty, dialect) { }
 
+            // 实例属性 — 返回原始字段名（用于 Select 多字段选取）
+            public string Id => ID;
+            public string UserId => USER_ID;
+            public string Amount => AMOUNT;
+            public string CreateTime => CREATE_TIME;
+
+            // GetXxx 方法 — 返回带引号/前缀修饰的字段名
             public string GetId(bool needPrefix = true) => QuoteField(ID, needPrefix);
             public string GetUserId(bool needPrefix = true) => QuoteField(USER_ID, needPrefix);
             public string GetAmount(bool needPrefix = true) => QuoteField(AMOUNT, needPrefix);
@@ -142,7 +156,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName(), s.GetEmail());
+            s.Select(true, s.Name, s.Email);
 
             var qb = new QueryBuilder().From(s)
                 .OrderBy("u.Name ASC", "u.Email DESC");
@@ -232,7 +246,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName(), s.GetEmail());
+            s.Select(true, s.Name, s.Email);
 
             var qb = new QueryBuilder().From(s)
                 .OrderBy("u.Name ASC");
@@ -532,7 +546,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName(), s.GetEmail());
+            s.Select(true, s.Name, s.Email);
 
             var qb = new QueryBuilder().From(s)
                 .Where($"{s.GetStatus()} = 1");
@@ -650,7 +664,7 @@ namespace EasySQL.Test
         {
             SQLDialectFactory.UseSqlServerDialect();
             var s = new TestUserTableDef("u");
-            s.Select(s.GetName(), s.GetEmail());
+            s.Select(true, s.Name, s.Email);
 
             var qb = new QueryBuilder().From(s)
                 .Where($"{s.GetStatus()} = 1");

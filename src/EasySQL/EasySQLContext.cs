@@ -25,7 +25,7 @@ namespace EasySQL
     ///         return await _db.DoAsync(async conn =>
     ///         {
     ///             var s = new UserTableDef("u");
-    ///             s.Select(true, s.GetName());
+    ///             s.Select(s.GetName());
     ///             var qb = new QueryBuilder().From(s);
     ///             return await conn.QueryAsync&lt;User&gt;(qb.BuildSql());
     ///         });
