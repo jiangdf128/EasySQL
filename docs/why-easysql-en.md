@@ -105,6 +105,13 @@ OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY
 
 One query returns both the page of data and the total row count. No separate `SELECT COUNT(*)` needed.
 
+For deep pagination on large tables, where `COUNT(*) OVER()` may hurt performance, turn the window function off and use two queries instead:
+
+```csharp
+string pageSql = qb.BuildSql(rowLimit: 10, rowOffset: 5, includeTotalCount: false);
+string countSql = qb.BuildCountSql();
+```
+
 ### 3. Zero-Cost Temp Tables
 
 ```csharp

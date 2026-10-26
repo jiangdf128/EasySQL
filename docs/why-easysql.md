@@ -105,6 +105,13 @@ OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY
 
 一次查询同时返回分页数据和总记录数，不需要 `SELECT COUNT(*)` 再查一次。
 
+大表深分页时如果担心 `COUNT(*) OVER()` 的开销，可以关掉窗口函数，改用两次查询：
+
+```csharp
+string pageSql = qb.BuildSql(rowLimit: 10, rowOffset: 5, includeTotalCount: false);
+string countSql = qb.BuildCountSql();
+```
+
 ### 3. 临时表零成本接入
 
 ```csharp

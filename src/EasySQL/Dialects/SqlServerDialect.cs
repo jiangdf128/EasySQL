@@ -22,18 +22,18 @@ namespace EasySQL
         /// <inheritdoc/>
         public override bool IsBracketJoin => false;
 
+        /// <summary>
+        /// SQL Server 的 OFFSET/FETCH 语法强制要求 ORDER BY，
+        /// 缺少 ORDER BY 时由基类统一补一个常量排序（ORDER BY 1）。
+        /// </summary>
+        protected override bool RequireOrderByForPaging => true;
+
         /// <inheritdoc/>
         protected override string ApplyPaging(StringBuilder sql, int rowLimit, int rowOffset, bool forCount, bool isSubCount, bool readable)
         {
             if (forCount || isSubCount || rowLimit <= 0)
                 return sql.ToString();
 
-            // SQL Server 分页需要 ORDER BY，若无则追加常量排序
-            bool hasOrderBy = sql.ToString().Contains("ORDER BY ");
-            if (!hasOrderBy)
-            {
-                sql.Append(string.Format("{0}ORDER BY 1 ", readable ? System.Environment.NewLine : " "));
-            }
             sql.Append(string.Format("{0}OFFSET {1} ROWS FETCH NEXT {2} ROWS ONLY ", readable ? System.Environment.NewLine : " ", rowOffset, rowLimit));
             return sql.ToString();
         }

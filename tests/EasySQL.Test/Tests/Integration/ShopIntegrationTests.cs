@@ -209,6 +209,48 @@ namespace EasySQL.Test.Tests.Integration
         // ================================================================
 
         [Fact]
+        public void Paging_WithGroupBy_TotalShouldBeGroupCount()
+        {
+            EasySQLContext.Default.Do(conn =>
+            {
+                CleanAll(conn);
+                var user = new User { UserName = "分组分页" };
+                conn.Insert(user);
+                // 3 个商品，各 2 笔订单
+                for (int p = 1; p <= 3; p++)
+                {
+                    var prod = new Product { Name = $"分组商品{p}", Price = 10, Stock = 100 };
+                    conn.Insert(prod);
+                    for (int i = 1; i <= 2; i++)
+                    {
+                        var o = new Order { UserId = user.Id, OrderNo = $"GP_{p}_{i}", TotalAmount = 10 };
+                        conn.Insert(o);
+                        conn.Insert(new OrderItem { OrderId = o.Id, ProductId = prod.Id, Quantity = i, UnitPrice = 10 });
+                    }
+                }
+
+                var s = new OrderItemTableDef("i");
+                s.Select(true, s.ProductId);
+                s.SelectExpression("Count(1) AS Cnt");
+                var qb = new QueryBuilder().From(s)
+                    .GroupBy($"{s.GetProductId()}")
+                    .OrderBy($"{s.GetProductId()} ASC");
+
+                // 一次查询模式：总记录数是分组数（3），不是明细行数（6）
+                string sql = qb.BuildSql(rowLimit: 2, rowOffset: 0);
+                var rows = conn.Query(sql, qb.Parameters.ToDynamicParameters()).ToList();
+                Assert.Equal(2, rows.Count);
+                Assert.Equal(3, Convert.ToInt32(((IDictionary<string, object>)rows[0])[QueryBuilder.PagingTotalAlias]));
+
+                // 两次查询模式：计数语句同样统计分组数
+                int total = conn.ExecuteScalar<int>(qb.BuildCountSql(), qb.Parameters.ToDynamicParameters());
+                Assert.Equal(3, total);
+
+                CleanAll(conn);
+            });
+        }
+
+        [Fact]
         public void Paging_OrderList_ShouldWork()
         {
             EasySQLContext.Default.Do(conn =>
@@ -231,6 +273,90 @@ namespace EasySQL.Test.Tests.Integration
                 var rows = conn.Query(sql, qb.Parameters.ToDynamicParameters()).ToList();
                 Assert.Equal(5, rows.Count);
                 Assert.Equal(15, Convert.ToInt32(((IDictionary<string, object>)rows[0])[QueryBuilder.PagingTotalAlias]));
+
+                CleanAll(conn);
+            });
+        }
+
+        [Fact]
+        public void Paging_WithoutTotalCount_ShouldMatchWindowFunctionResult()
+        {
+            EasySQLContext.Default.Do(conn =>
+            {
+                CleanAll(conn);
+                var user = new User { UserName = "分页" };
+                conn.Insert(user);
+                for (int i = 1; i <= 15; i++)
+                    conn.Insert(new Order { UserId = user.Id, OrderNo = $"PAGE_{i:D3}", TotalAmount = i * 100 });
+
+                var s = new OrderTableDef("o");
+                s.Select(true, s.OrderNo, s.TotalAmount);
+                var qb = new QueryBuilder().From(s)
+                    .Where($"{s.GetOrderNo()} LIKE 'PAGE_%'")
+                    .OrderBy($"{s.GetOrderNo()} ASC");
+
+                // 模式一：窗口函数（一次查询返回数据 + 总数）
+                string windowSql = qb.BuildSql(rowLimit: 5, rowOffset: 5);
+                var windowRows = conn.Query(windowSql, qb.Parameters.ToDynamicParameters()).ToList();
+                int windowTotal = Convert.ToInt32(((IDictionary<string, object>)windowRows[0])[QueryBuilder.PagingTotalAlias]);
+
+                // 模式二：两次查询（分页不带总数列 + 单独计数）
+                string pageSql = qb.BuildSql(rowLimit: 5, rowOffset: 5, includeTotalCount: false);
+                Assert.DoesNotContain(QueryBuilder.PagingTotalAlias, pageSql);
+                var pageRows = conn.Query(pageSql, qb.Parameters.ToDynamicParameters()).ToList();
+                int countTotal = conn.ExecuteScalar<int>(qb.BuildCountSql(), qb.Parameters.ToDynamicParameters());
+
+                Assert.Equal(5, pageRows.Count);
+                Assert.Equal(windowRows.Count, pageRows.Count);
+                Assert.Equal(windowTotal, countTotal);
+                Assert.Equal(15, countTotal);
+                // 两种模式返回的记录内容一致
+                for (int i = 0; i < pageRows.Count; i++)
+                {
+                    Assert.Equal(
+                        ((IDictionary<string, object>)windowRows[i])["OrderNo"],
+                        ((IDictionary<string, object>)pageRows[i])["OrderNo"]);
+                }
+
+                CleanAll(conn);
+            });
+        }
+
+        [Fact]
+        public void Union_Paging_ShouldExecuteAndReturnMergedRows()
+        {
+            EasySQLContext.Default.Do(conn =>
+            {
+                CleanAll(conn);
+                var user = new User { UserName = "联合" };
+                conn.Insert(user);
+                for (int i = 1; i <= 6; i++)
+                    conn.Insert(new Order { UserId = user.Id, OrderNo = $"UN_{i:D3}", TotalAmount = i * 100 });
+
+                var s = new OrderTableDef("o");
+                s.Select(true, s.OrderNo);
+
+                // 两个分支：编号 <= UN_003 与编号 >= UN_004
+                var qb1 = new QueryBuilder().From(s)
+                    .Where($"{s.GetOrderNo()} <= 'UN_003'");
+                var qb2 = new QueryBuilder().From(s)
+                    .Where($"{s.GetOrderNo()} >= 'UN_004'");
+                qb1.Union(qb2, isUnionAll: true);
+
+                // 计数必须覆盖 UNION 的全部分支
+                int total = conn.ExecuteScalar<int>(qb1.BuildCountSql(), qb1.Parameters.ToDynamicParameters());
+                Assert.Equal(6, total);
+
+                // 分页作用于合并后的结果集
+                string pageSql = qb1.BuildSql(rowLimit: 4, rowOffset: 0, includeTotalCount: false);
+                var rows = conn.Query(pageSql, qb1.Parameters.ToDynamicParameters()).ToList();
+                Assert.Equal(4, rows.Count);
+
+                // 带总数列的模式同样适用（总数是合并后的总行数）
+                string windowSql = qb1.BuildSql(rowLimit: 4, rowOffset: 0);
+                var windowRows = conn.Query(windowSql, qb1.Parameters.ToDynamicParameters()).ToList();
+                Assert.Equal(4, windowRows.Count);
+                Assert.Equal(6, Convert.ToInt32(((IDictionary<string, object>)windowRows[0])[QueryBuilder.PagingTotalAlias]));
 
                 CleanAll(conn);
             });

@@ -323,6 +323,469 @@ namespace EasySQL.Test
         }
 
         // ================================================================
+        // 分页总数列开关（includeTotalCount）
+        // ================================================================
+        [Fact]
+        public void Paging_Default_ShouldInjectTotalRowsWindowFunction()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.Select(true, s.Name);
+
+            var qb = new QueryBuilder().From(s);
+
+            var sql = qb.BuildSql(rowLimit: 10, rowOffset: 5);
+            LogSql(sql);
+            Assert.Contains($"COUNT(*) OVER() AS {QueryBuilder.PagingTotalAlias}", sql);
+        }
+
+        [Fact]
+        public void Paging_IncludeTotalCountFalse_ShouldNotInjectWindowFunction()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.Select(true, s.Name);
+
+            var qb = new QueryBuilder().From(s);
+
+            var sql = qb.BuildSql(rowLimit: 10, rowOffset: 5, includeTotalCount: false);
+            LogSql(sql);
+            Assert.DoesNotContain("COUNT(*) OVER()", sql);
+            Assert.DoesNotContain(QueryBuilder.PagingTotalAlias, sql);
+            // 分页本身仍然生效
+            Assert.Contains("OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+        }
+
+        [Theory]
+        [InlineData("sqlconnection", "OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY")]
+        [InlineData("oracleconnection", "OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY")]
+        [InlineData("db2connection", "OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY")]
+        [InlineData("mysqlconnection", "LIMIT 10")]
+        [InlineData("npgsqlconnection", "LIMIT 10")]
+        [InlineData("sqliteconnection", "LIMIT 10")]
+        public void Paging_IncludeTotalCountFalse_AllDialects_ShouldUseDialectPagingSyntax(string dialect, string expected)
+        {
+            SQLDialectFactory.UseDialect(dialect);
+            var s = new TestUserTableDef("u");
+            s.Select(true, s.Name);
+
+            var qb = new QueryBuilder().From(s);
+
+            var sql = qb.BuildSql(rowLimit: 10, rowOffset: 5, includeTotalCount: false);
+            LogSql(sql, dialect);
+            Assert.Contains(expected, sql);
+            Assert.DoesNotContain("COUNT(*) OVER()", sql);
+        }
+
+        [Fact]
+        public void Paging_SqlServer_WhereContainsOrderByText_ShouldStillAddOrderBy()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.Select(true, s.Name);
+
+            var qb = new QueryBuilder().From(s)
+                .Where($"{s.GetName()} = 'ORDER BY x'");
+
+            var sql = qb.BuildSql(rowLimit: 10);
+            LogSql(sql);
+            // WHERE 里出现 "ORDER BY " 字面量时，仍然必须补上 ORDER BY，否则 SQL Server 报语法错误
+            Assert.Contains("ORDER BY 1", sql);
+        }
+
+        [Theory]
+        [InlineData("sqlconnection")]
+        [InlineData("oracleconnection")]
+        [InlineData("db2connection")]
+        public void Paging_OffsetFetchDialect_NoOrderBy_ShouldAddDummyOrderBy(string dialect)
+        {
+            SQLDialectFactory.UseDialect(dialect);
+            var s = new TestUserTableDef("u");
+            s.Select(true, s.Name);
+
+            var qb = new QueryBuilder().From(s);
+
+            var sql = qb.BuildSql(rowLimit: 10, includeTotalCount: false);
+            LogSql(sql, dialect);
+            // OFFSET/FETCH 语法强制要求 ORDER BY
+            Assert.Contains("ORDER BY 1", sql);
+        }
+
+        [Fact]
+        public void BuildSql_NoSelectFields_ShouldUseWildcard()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+
+            var qb = new QueryBuilder().From(s);
+
+            var sql = qb.BuildSql(rowLimit: 10, includeTotalCount: false);
+            LogSql(sql);
+            Assert.Contains("u.*", sql);
+        }
+
+        // ================================================================
+        // 分页与查询结构的组合
+        // ================================================================
+        [Fact]
+        public void Paging_WithGroupBy_ShouldCountGroupsInTotal()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.Select(true, s.Status);
+            s.SelectExpression("Count(1) AS Cnt");
+
+            var qb = new QueryBuilder().From(s)
+                .GroupBy(s.GetStatus())
+                .OrderBy($"{s.GetStatus()} ASC");
+
+            var sql = qb.BuildSql(rowLimit: 10);
+            LogSql(sql);
+            // 分组查询的总记录数是分组数（COUNT(*) OVER() 作用在分组结果上）
+            Assert.Contains($"COUNT(*) OVER() AS {QueryBuilder.PagingTotalAlias}", sql);
+            Assert.Contains("GROUP BY u.Status", sql);
+        }
+
+        [Fact]
+        public void Paging_WithDistinct_ShouldCountDistinctRows()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.Select(true, s.Name, s.Email);
+
+            var qb = new QueryBuilder().From(s);
+            qb.IsDistinct = true;
+
+            var sql = qb.BuildSql(rowLimit: 10);
+            LogSql(sql);
+            // DISTINCT 与总数列共存：DISTINCT 作用于整个行，总数列是常量不影响去重
+            Assert.Contains("SELECT DISTINCT", sql);
+            Assert.Contains($"COUNT(*) OVER() AS {QueryBuilder.PagingTotalAlias}", sql);
+        }
+
+        [Fact]
+        public void Paging_WithJoin_ShouldKeepJoinClause()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            var o = new TestOrderTableDef("o");
+            s.Select(true, s.Name);
+            o.Select(true, o.Amount);
+            s.Join(o, $"{s.GetId()} = {o.GetUserId()}");
+
+            var qb = new QueryBuilder().From(s, o)
+                .OrderBy($"{s.GetName()} ASC");
+
+            var sql = qb.BuildSql(rowLimit: 10, includeTotalCount: false);
+            LogSql(sql);
+            Assert.Contains("INNER JOIN Orders o on u.Id = o.UserId", sql);
+            Assert.Contains("OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+        }
+
+        [Fact]
+        public void Paging_WithExists_ShouldKeepExistsClause()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.Select(true, s.Name);
+            var o = new TestOrderTableDef("o");
+            var subQb = new QueryBuilder().From(o).Where($"{o.GetUserId()} = {s.GetId()}");
+
+            var qb = new QueryBuilder().From(s)
+                .Exists(subQb)
+                .OrderBy($"{s.GetName()} ASC");
+
+            var sql = qb.BuildSql(rowLimit: 10, includeTotalCount: false);
+            LogSql(sql);
+            Assert.Contains("EXISTS (", sql);
+            Assert.Contains("OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+        }
+
+        [Fact]
+        public void Paging_WithSubQueryFrom_ShouldKeepSubQuery()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.Select(true, s.Name);
+
+            var subQb = new QueryBuilder("sub")
+                .From(s)
+                .Where($"{s.GetStatus()} = 1");
+
+            var qb = new QueryBuilder().From(subQb);
+
+            var sql = qb.BuildSql(rowLimit: 10, includeTotalCount: false);
+            LogSql(sql);
+            Assert.Contains("FROM (SELECT u.Name", sql);
+            Assert.Contains("OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+        }
+
+        [Fact]
+        public void Paging_WithAutoAlias_ShouldNotConflictWithTotalColumn()
+        {
+            EasySQLContext.AutoAlias = true;
+            try
+            {
+                SQLDialectFactory.UseSqlServerDialect();
+                var s = new SnakeUserTableDef("u");
+                s.Select(true, s.UserName, s.CreateTime);
+
+                var qb = new QueryBuilder().From(s)
+                    .OrderBy($"{s.GetCreateTime()} DESC");
+
+                var sql = qb.BuildSql(rowLimit: 10);
+                LogSql(sql);
+                // 自动别名（PascalCase）与总数列共存
+                Assert.Contains("u.user_name AS UserName", sql);
+                Assert.Contains($"COUNT(*) OVER() AS {QueryBuilder.PagingTotalAlias}", sql);
+            }
+            finally { EasySQLContext.AutoAlias = false; }
+        }
+
+        [Fact]
+        public void Paging_WithHaving_ShouldKeepHavingClause()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.Select(true, s.Status);
+            s.SelectExpression("Count(1) AS Cnt");
+
+            var qb = new QueryBuilder().From(s)
+                .GroupBy(s.GetStatus())
+                .Having("Count(1) > 5")
+                .OrderBy($"{s.GetStatus()} ASC");
+
+            var sql = qb.BuildSql(rowLimit: 10, includeTotalCount: false);
+            LogSql(sql);
+            Assert.Contains("GROUP BY u.Status", sql);
+            Assert.Contains("HAVING Count(1) > 5", sql);
+            Assert.Contains("OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+        }
+
+        [Fact]
+        public void Paging_WithMultipleOrderBy_ShouldKeepBothColumns()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.Select(true, s.Name, s.Email);
+
+            var qb = new QueryBuilder().From(s)
+                .OrderBy($"{s.GetName()} ASC", $"{s.GetEmail()} DESC");
+
+            var sql = qb.BuildSql(rowLimit: 10, includeTotalCount: false);
+            LogSql(sql);
+            Assert.Contains("ORDER BY u.Name ASC,u.Email DESC", sql);
+        }
+
+        [Fact]
+        public void Paging_WithMultipleWhere_ShouldCombineWithAnd()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.Select(true, s.Name);
+
+            var qb = new QueryBuilder().From(s)
+                .Where($"{s.GetStatus()} = {s.AsParam("Status")}",
+                       $"{s.GetName()} LIKE {s.AsParam("Name")}")
+                .AddParameter("Status", 1)
+                .AddParameter("Name", "%张%")
+                .OrderBy($"{s.GetName()} ASC");
+
+            var sql = qb.BuildSql(rowLimit: 10, includeTotalCount: false);
+            LogSql(sql);
+            Assert.Contains("WHERE (u.Status = @Status AND u.Name LIKE @Name)", sql);
+            Assert.Equal(1, qb.Parameters["Status"]);
+            Assert.Equal("%张%", qb.Parameters["Name"]);
+        }
+
+        [Fact]
+        public void Paging_RowLimitZero_ShouldNotAddPagingOrTotalColumn()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.Select(true, s.Name);
+
+            var qb = new QueryBuilder().From(s);
+
+            var sql = qb.BuildSql(rowLimit: 0);
+            LogSql(sql);
+            // 没有限制行数时不注入总数列，也不加分页子句
+            Assert.DoesNotContain("COUNT(*) OVER()", sql);
+            Assert.DoesNotContain("OFFSET", sql);
+            Assert.DoesNotContain("FETCH NEXT", sql);
+        }
+
+        [Fact]
+        public void Paging_CountAndPage_ShouldShareSameWhereAndParameters()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.Select(true, s.Name);
+
+            var qb = new QueryBuilder().From(s)
+                .Where($"{s.GetStatus()} = {s.AsParam("Status")}")
+                .AddParameter("Status", 1)
+                .OrderBy($"{s.GetName()} ASC");
+
+            string pageSql = qb.BuildSql(rowLimit: 10, rowOffset: 20, includeTotalCount: false);
+            string countSql = qb.BuildCountSql();
+            LogSql(pageSql, "分页");
+            LogSql(countSql, "计数");
+
+            // 两次查询的 WHERE 必须完全一致，否则总数和分页数据对不上
+            Assert.Contains("WHERE (u.Status = @Status)", pageSql);
+            Assert.Contains("WHERE (u.Status = @Status)", countSql);
+            Assert.Equal(1, qb.Parameters["Status"]);
+        }
+
+        // ================================================================
+        // COUNT 测试（分组 / 去重口径）
+        // ================================================================
+        [Fact]
+        public void BuildCountSql_WithGroupBy_ShouldNotContainOrderBy()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.Select(true, s.Status);
+            s.SelectExpression("Count(1) AS Cnt");
+
+            var qb = new QueryBuilder().From(s)
+                .GroupBy(s.GetStatus())
+                .OrderBy($"{s.GetStatus()} ASC");
+
+            var sql = qb.BuildCountSql();
+            LogSql(sql);
+            Assert.Contains("Count(1) AS RowsCount", sql);
+            // 计数内层子查询不需要排序
+            Assert.DoesNotContain("ORDER BY", sql);
+        }
+
+        [Fact]
+        public void BuildCountSql_DistinctMultipleColumns_ShouldCountDistinctRows()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.Select(true, s.Name, s.Email);
+
+            var qb = new QueryBuilder().From(s);
+            qb.IsDistinct = true;
+
+            var sql = qb.BuildCountSql();
+            LogSql(sql);
+            // 多列去重必须用派生表计数，不能用 Count(DISTINCT 单列)
+            Assert.Contains("Count(1) AS RowsCount", sql);
+            Assert.Contains("SELECT DISTINCT", sql);
+            Assert.DoesNotContain("Count(DISTINCT", sql);
+        }
+
+        [Fact]
+        public void BuildCountSql_DistinctWithExpression_ShouldNotGenerateInvalidSql()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s = new TestUserTableDef("u");
+            s.SelectExpression("Count(1) AS Cnt");
+
+            var qb = new QueryBuilder().From(s);
+            qb.IsDistinct = true;
+
+            var sql = qb.BuildCountSql();
+            LogSql(sql);
+            // 旧实现会生成 Count(DISTINCT Count(1)) 这样的非法 SQL
+            Assert.DoesNotContain("Count(DISTINCT Count(1))", sql);
+            Assert.Contains("Count(1) AS RowsCount", sql);
+        }
+
+        // ================================================================
+        // UNION 分页 / 计数测试
+        // ================================================================
+        [Fact]
+        public void Union_WithPaging_ShouldWrapAsDerivedTable()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s1 = new TestUserTableDef("u");
+            s1.Select(true, s1.Name);
+            var s2 = new TestUserTableDef("u2");
+            s2.Select(true, s2.Name);
+
+            var qb1 = new QueryBuilder().From(s1)
+                .Where($"{s1.GetStatus()} = {s1.AsParam("S1")}")
+                .AddParameter("S1", 1);
+            var qb2 = new QueryBuilder().From(s2)
+                .Where($"{s2.GetStatus()} = {s2.AsParam("S2")}")
+                .AddParameter("S2", 2);
+            qb1.Union(qb2, isUnionAll: true);
+
+            var sql = qb1.BuildSql(rowLimit: 10, rowOffset: 5, includeTotalCount: false);
+            LogSql(sql);
+            // UNION 的分页必须作用于合并后的结果集
+            Assert.Contains("UNION ALL", sql);
+            Assert.Contains("OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+            Assert.Contains("FROM (SELECT u.Name", sql);
+            // 分支的参数必须合并到主查询，否则执行时参数缺失
+            Assert.Contains("@S1", sql);
+            Assert.Contains("@S2", sql);
+            Assert.Equal(1, qb1.Parameters["S1"]);
+            Assert.Equal(2, qb1.Parameters["S2"]);
+        }
+
+        [Fact]
+        public void Union_WithPaging_ShouldMapOrderByToOutputColumn()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s1 = new TestUserTableDef("u");
+            s1.Select(true, s1.Name);
+            var s2 = new TestUserTableDef("u2");
+            s2.Select(true, s2.Name);
+
+            var qb1 = new QueryBuilder().From(s1).OrderBy($"{s1.GetName()} ASC");
+            var qb2 = new QueryBuilder().From(s2);
+            qb1.Union(qb2, isUnionAll: true);
+
+            var sql = qb1.BuildSql(rowLimit: 10, includeTotalCount: false);
+            LogSql(sql);
+            // 排序表达式要映射成结果集的输出列名
+            Assert.Contains("ORDER BY A.Name ASC", sql);
+        }
+
+        [Fact]
+        public void Union_WithCount_ShouldCountAllBranches()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s1 = new TestUserTableDef("u");
+            s1.Select(true, s1.Name);
+            var s2 = new TestUserTableDef("u2");
+            s2.Select(true, s2.Name);
+
+            var qb1 = new QueryBuilder().From(s1);
+            var qb2 = new QueryBuilder().From(s2);
+            qb1.Union(qb2, isUnionAll: true);
+
+            var sql = qb1.BuildCountSql();
+            LogSql(sql);
+            // 计数必须覆盖 UNION 的全部分支
+            Assert.Contains("Count(1) AS RowsCount", sql);
+            Assert.Contains("UNION ALL", sql);
+        }
+
+        [Fact]
+        public void Union_WithOrderByNotInSelect_ShouldThrow()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            var s1 = new TestUserTableDef("u");
+            s1.Select(true, s1.Name);
+            var s2 = new TestUserTableDef("u2");
+            s2.Select(true, s2.Name);
+
+            var qb1 = new QueryBuilder().From(s1).OrderBy($"{s1.GetId()} ASC");
+            var qb2 = new QueryBuilder().From(s2);
+            qb1.Union(qb2, isUnionAll: true);
+
+            // 排序字段不在 SELECT 列中，无法映射到结果集的输出列，应明确报错而不是生成错误 SQL
+            Assert.Throws<NotSupportedException>(() => qb1.BuildSql(rowLimit: 10, includeTotalCount: false));
+        }
+
+
+        // ================================================================
         // INSERT / UPDATE / DELETE 测试
         // ================================================================
         [Fact]

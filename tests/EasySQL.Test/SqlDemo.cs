@@ -28,6 +28,7 @@ namespace EasySQL.Test
             DemoExists();
             DemoBuildIntoSql();
             DemoSnakeCase();
+            DemoEdgeCases();
 
             Console.WriteLine("=== 演示结束 ===");
         }
@@ -36,6 +37,21 @@ namespace EasySQL.Test
         {
             Console.WriteLine($"── {title} ──");
             Console.WriteLine(sql);
+            Console.WriteLine();
+        }
+
+        static void PrintException(string title, Action action)
+        {
+            Console.WriteLine($"── {title} ──");
+            try
+            {
+                action();
+                Console.WriteLine("(未抛出异常)");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"异常: {ex.GetType().Name} - {ex.Message}");
+            }
             Console.WriteLine();
         }
 
@@ -120,7 +136,21 @@ namespace EasySQL.Test
             s.SelectExpression("Count(1) AS Cnt");
             var qb2 = new QueryBuilder().From(s)
                 .GroupBy(s.GetStatus());
-            Print("有分组 COUNT（子查询包装）", qb2.BuildCountSql());
+            Print("有分组 COUNT（子查询包装，内层无 ORDER BY）", qb2.BuildCountSql());
+
+            // DISTINCT 多列：计数口径必须与结果集一致 → 派生表包装
+            var s2 = new DemoUserTableDef("u");
+            s2.Select(true, s2.Name, s2.Email);
+            var qb3 = new QueryBuilder().From(s2);
+            qb3.IsDistinct = true;
+            Print("DISTINCT 多列 COUNT（派生表包装）", qb3.BuildCountSql());
+
+            // DISTINCT + 首列是表达式：旧实现会生成 Count(DISTINCT Count(1)) 这样的非法 SQL
+            var s3 = new DemoUserTableDef("u");
+            s3.SelectExpression("Count(1) AS Cnt");
+            var qb4 = new QueryBuilder().From(s3);
+            qb4.IsDistinct = true;
+            Print("DISTINCT 表达式 COUNT", qb4.BuildCountSql());
         }
 
         static void DemoPaging()
@@ -159,6 +189,143 @@ namespace EasySQL.Test
             SQLDialectFactory.UseDialect("db2connection");
             var qb6 = new QueryBuilder().From(s);
             Print("DB2 (OFFSET/FETCH)", qb6.BuildSql(rowLimit: 10, rowOffset: 5));
+
+            Console.WriteLine("────────── 分页的两种模式 ──────────");
+            SQLDialectFactory.UseSqlServerDialect();
+
+            // 模式一：一次查询（默认）—— 注入 COUNT(*) OVER()
+            var qbA = new QueryBuilder().From(s).OrderBy($"{s.GetName()} ASC");
+            Print("模式一：一次查询（含总数列）", qbA.BuildSql(rowLimit: 10, rowOffset: 5));
+
+            // 模式二：两次查询 —— 分页不带窗口函数 + 单独计数
+            var qbB = new QueryBuilder().From(s).OrderBy($"{s.GetName()} ASC");
+            Print("模式二：分页（不含总数列）", qbB.BuildSql(rowLimit: 10, rowOffset: 5, includeTotalCount: false));
+            Print("模式二：单独计数", qbB.BuildCountSql());
+            Console.WriteLine("  两条语句共用同一组参数: " + string.Join(", ", qbB.Parameters.Keys));
+            Console.WriteLine();
+
+            // 模式二的参数化写法：WHERE 完全一致，只是执行两条语句
+            var qbP = new QueryBuilder().From(s)
+                .Where($"{s.GetStatus()} = {s.AsParam("Status")}")
+                .AddParameter("Status", 1)
+                .OrderBy($"{s.GetName()} ASC");
+            Print("模式二：参数化分页", qbP.BuildSql(rowLimit: 10, rowOffset: 20, includeTotalCount: false));
+            Print("模式二：参数化计数", qbP.BuildCountSql());
+            Console.WriteLine("  参数: " + string.Join(", ", qbP.Parameters.Select(kv => kv.Key + "=" + kv.Value)));
+            Console.WriteLine();
+
+            Console.WriteLine("────────── 分页与查询结构的组合 ──────────");
+
+            // 分页 + GROUP BY：总记录数是分组数，不是明细行数
+            var g1 = new DemoUserTableDef("u");
+            g1.Select(true, g1.Status);
+            g1.SelectExpression("Count(1) AS Cnt");
+            var qbG = new QueryBuilder().From(g1)
+                .GroupBy(g1.GetStatus())
+                .OrderBy($"{g1.GetStatus()} ASC");
+            Print("分页 + GROUP BY（总数 = 分组数）", qbG.BuildSql(rowLimit: 10));
+            Print("分页 + GROUP BY 的计数语句", qbG.BuildCountSql());
+
+            // 分页 + DISTINCT：总记录数是去重后的行数
+            var d1 = new DemoUserTableDef("u");
+            d1.Select(true, d1.Name, d1.Email);
+            var qbD = new QueryBuilder().From(d1);
+            qbD.IsDistinct = true;
+            Print("分页 + DISTINCT（总数 = 去重行数）", qbD.BuildSql(rowLimit: 10));
+            Print("分页 + DISTINCT 的计数语句", qbD.BuildCountSql());
+
+            // 分页 + JOIN
+            var j1 = new DemoUserTableDef("u");
+            var jo = new DemoOrderTableDef("o");
+            j1.Select(true, j1.Name);
+            jo.Select(true, jo.Amount);
+            j1.Join(jo, $"{j1.GetId()} = {jo.GetUserId()}");
+            var qbJ = new QueryBuilder().From(j1, jo)
+                .OrderBy($"{j1.GetName()} ASC");
+            Print("分页 + JOIN", qbJ.BuildSql(rowLimit: 10, includeTotalCount: false));
+
+            // 分页 + EXISTS 子查询
+            var e1 = new DemoUserTableDef("u");
+            e1.Select(true, e1.Name);
+            var eo = new DemoOrderTableDef("o");
+            var eSub = new QueryBuilder().From(eo).Where($"{eo.GetUserId()} = {e1.GetId()}");
+            var qbE = new QueryBuilder().From(e1)
+                .Exists(eSub)
+                .OrderBy($"{e1.GetName()} ASC");
+            Print("分页 + EXISTS", qbE.BuildSql(rowLimit: 10, includeTotalCount: false));
+
+            // 分页 + FROM 子查询
+            var q1 = new DemoUserTableDef("u");
+            q1.Select(true, q1.Name);
+            var subQb = new QueryBuilder("sub")
+                .From(q1)
+                .Where($"{q1.GetStatus()} = 1");
+            var qbSub = new QueryBuilder().From(subQb);
+            Print("分页 + FROM 子查询", qbSub.BuildSql(rowLimit: 10, includeTotalCount: false));
+
+            // 分页 + HAVING
+            var h1 = new DemoUserTableDef("u");
+            h1.Select(true, h1.Status);
+            h1.SelectExpression("Count(1) AS Cnt");
+            var qbH = new QueryBuilder().From(h1)
+                .GroupBy(h1.GetStatus())
+                .Having("Count(1) > 5")
+                .OrderBy($"{h1.GetStatus()} ASC");
+            Print("分页 + HAVING", qbH.BuildSql(rowLimit: 10, includeTotalCount: false));
+
+            // 分页 + 多列排序
+            var qbMs = new QueryBuilder().From(s)
+                .OrderBy($"{s.GetName()} ASC", $"{s.GetEmail()} DESC");
+            Print("分页 + 多列排序", qbMs.BuildSql(rowLimit: 10, includeTotalCount: false));
+
+            // 分页 + 多个 WHERE 条件（参数化）
+            var qbW = new QueryBuilder().From(s)
+                .Where($"{s.GetStatus()} = {s.AsParam("Status")}",
+                       $"{s.GetName()} LIKE {s.AsParam("Name")}")
+                .AddParameter("Status", 1)
+                .AddParameter("Name", "%张%")
+                .OrderBy($"{s.GetName()} ASC");
+            Print("分页 + 多个 WHERE 条件", qbW.BuildSql(rowLimit: 10, includeTotalCount: false));
+
+            // 分页 + snake_case 自动别名（总数列不能与自动别名冲突）
+            var sn = new DemoSnakeUserTableDef("u");
+            sn.Select(true, sn.UserName, sn.CreateTime);
+            EasySQLContext.AutoAlias = true;
+            var qbSn = new QueryBuilder().From(sn)
+                .OrderBy($"{sn.GetCreateTime()} DESC");
+            Print("分页 + snake_case 自动别名", qbSn.BuildSql(rowLimit: 10));
+            EasySQLContext.AutoAlias = false;
+
+            Console.WriteLine("────────── 分页的边界情况 ──────────");
+
+            // 没有 ORDER BY：SQL Server / Oracle / DB2 的 OFFSET/FETCH 必须配 ORDER BY，缺省补 ORDER BY 1
+            var qbC = new QueryBuilder().From(s);
+            Print("无 ORDER BY 分页（补 ORDER BY 1）", qbC.BuildSql(rowLimit: 10, includeTotalCount: false));
+
+            // WHERE 里含 "ORDER BY " 字面量：不能再用字符串匹配判断有无 ORDER BY
+            var qbD2 = new QueryBuilder().From(s)
+                .Where($"{s.GetName()} = 'ORDER BY x'");
+            Print("WHERE 含 'ORDER BY ' 字面量（仍补 ORDER BY 1）", qbD2.BuildSql(rowLimit: 10, includeTotalCount: false));
+
+            // 没有指定查询列：补默认列，避免生成 "SELECT FROM ..." 这样的非法语句
+            var s2 = new DemoUserTableDef("u");
+            var qbE2 = new QueryBuilder().From(s2);
+            Print("无查询列（补 u.*）", qbE2.BuildSql(rowLimit: 10, includeTotalCount: false));
+
+            // rowLimit = 0：不分页，也不注入总数列
+            var qbZ = new QueryBuilder().From(s);
+            Print("rowLimit=0（不分页、无总数列）", qbZ.BuildSql(rowLimit: 0));
+
+            // 页码越界：窗口函数模式返回 0 行，取不到总数；两次查询模式不受影响
+            Console.WriteLine("── 页码越界（offset 超出总行数）──");
+            Console.WriteLine("  模式一：结果为空 → 读不到 TotalRows");
+            Console.WriteLine("  模式二：分页仍返回 0 行，计数语句照常返回总数");
+            Console.WriteLine();
+
+            // 单行输出（PrettyPrint = false）
+            var qbF = new QueryBuilder().From(s).OrderBy($"{s.GetName()} ASC");
+            qbF.PrettyPrint = false;
+            Print("PrettyPrint=false", qbF.BuildSql(rowLimit: 10, rowOffset: 5, includeTotalCount: false));
         }
 
         static void DemoInsertUpdateDelete()
@@ -211,6 +378,47 @@ namespace EasySQL.Test
 
             qb1.Union(qb2, isUnionAll: true);
             Print("UNION ALL", qb1.BuildSql());
+
+            Console.WriteLine("---------- UNION 的分页与计数 ----------");
+
+            // 分页：作用于合并后的结果集（排序表达式会映射为结果集的输出列名）
+            var s1 = new DemoUserTableDef("u");
+            s1.Select(true, s1.Name, s1.Email);
+            var s2 = new DemoUserTableDef("u2");
+            s2.Select(true, s2.Name, s2.Email);
+
+            var p1 = new QueryBuilder().From(s1).OrderBy($"{s1.GetName()} ASC");
+            var p2 = new QueryBuilder().From(s2);
+            p1.Union(p2, isUnionAll: true);
+            Print("UNION 分页", p1.BuildSql(rowLimit: 10, rowOffset: 5, includeTotalCount: false));
+
+            // 计数：覆盖全部分支
+            var c1 = new QueryBuilder().From(s1);
+            var c2 = new QueryBuilder().From(s2);
+            c1.Union(c2, isUnionAll: true);
+            Print("UNION 计数", c1.BuildCountSql());
+        }
+
+        static void DemoEdgeCases()
+        {
+            SQLDialectFactory.UseSqlServerDialect();
+            Console.WriteLine("========== 边界情况与错误提示 ==========");
+
+            // UNION 的排序字段不在 SELECT 列中 → 无法映射到结果集输出列
+            var s1 = new DemoUserTableDef("u");
+            s1.Select(true, s1.Name);
+            var s2 = new DemoUserTableDef("u2");
+            s2.Select(true, s2.Name);
+            var qb1 = new QueryBuilder().From(s1).OrderBy($"{s1.GetId()} ASC");
+            var qb2 = new QueryBuilder().From(s2);
+            qb1.Union(qb2, isUnionAll: true);
+            PrintException("UNION 排序字段不在 SELECT 列中", () => qb1.BuildSql(rowLimit: 10, includeTotalCount: false));
+
+            // 只给 offset 不给 limit：分页子句不会生成（各库 LIMIT 语义不同，暂不支持）
+            var s5 = new DemoUserTableDef("u");
+            s5.Select(true, s5.Name);
+            var qb7 = new QueryBuilder().From(s5);
+            Print("仅 offset（rowLimit=0）：不分页", qb7.BuildSql(rowLimit: 0, rowOffset: 100));
         }
 
         static void DemoParameterized()

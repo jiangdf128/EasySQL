@@ -34,7 +34,7 @@ EasySQL 是一个轻量级跨数据库 SQL 查询构建库，核心理念：**�
   ├─ QueryBuilder              ← 主查询构建器（继承 TableDefBase）
   │     ├─ From / Where / GroupBy / OrderBy / Having
   │     ├─ Union / Exists / NotExists
-  │     ├─ BuildSql(rowLimit, rowOffset) → 自动注入 TotalRows
+  │     ├─ BuildSql(rowLimit, rowOffset, includeTotalCount) → 可选注入 TotalRows
   │     ├─ BuildCountSql()
   │     └─ Parameters 字典（防 SQL 注入）
   └─ InsertBuilder / UpdateBuilder / DeleteBuilder
@@ -54,8 +54,8 @@ SQL 方言层
 | `EasySQLContext` | 数据库上下文实例，持有连接配置。`Default` 静态单例供全局使用 |
 | `IEasySQLContext` | DI 接口，支持单例注入 |
 | `TableDefBase` | 表结构基类，提供 Select/Join/QuoteField，构造函数接受别名和方言 |
-| `QueryBuilder` | 完整 SELECT 构建器，含分页（自动注入 COUNT OVER）、Union、Exists |
-| `SQLDialectBase.BuildSql()` | 核心 SQL 生成逻辑（含 6 种数据库的分页处理） |
+| `QueryBuilder` | 完整 SELECT 构建器，含分页（可选注入 COUNT OVER）、Union、Exists |
+| `SQLDialectBase.BuildSql()` | 核心 SQL 生成逻辑（含 6 种数据库的分页处理）；UNION 走 `BuildUnionSql` 整体构建 |
 | `SQLDialectFactory` | 根据连接类型名自动选择方言，默认 SQL Server |
 | `InsertBuilder` | INSERT 构建器，支持 INSERT INTO ... SELECT |
 | `UpdateBuilder` / `DeleteBuilder` | 更新/删除构建器，无 WHERE 时抛异常防止误操作 |
@@ -80,6 +80,36 @@ string sql = qb.BuildSql(rowLimit: 10, rowOffset: 5);
 ```
 
 分页语法按方言自动选择：SQL Server/Oracle/DB2 → `OFFSET/FETCH`，MySQL/PostgreSQL/SQLite → `LIMIT/OFFSET`。
+SQL Server/Oracle/DB2 的 `OFFSET/FETCH` 强制要求 `ORDER BY`，未指定时由基类统一补 `ORDER BY 1`
+（`RequireOrderByForPaging` 方言属性控制）。
+
+#### 关掉窗口函数（两次查询模式）
+
+`COUNT(*) OVER()` 需要数据库读完整个结果集才能返回第一行，会阻断 Top-N 提前终止优化。
+大表深分页时用 `includeTotalCount: false` 只做分页，另发一条计数语句：
+
+```csharp
+string pageSql = qb.BuildSql(rowLimit: 10, rowOffset: 5, includeTotalCount: false);
+// → SELECT ... FROM ... OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY（无 COUNT(*) OVER()）
+string countSql = qb.BuildCountSql();
+// → SELECT Count(1) AS RowsCount FROM ...
+```
+
+两条语句共用同一个 `qb.Parameters`，WHERE 条件一致。页码超出总页数时，窗口函数模式拿不到总数（结果为空），两次查询模式不受影响。
+
+#### 计数口径
+
+`BuildCountSql()` 在有 GROUP BY 或 DISTINCT 时用派生表包装（`SELECT Count(1) FROM (内层) A`），
+保证计数口径与结果集一致；内层子查询不输出 ORDER BY（避免派生表里多一次无意义的排序）。
+其余情况直接生成 `SELECT Count(1) AS RowsCount ...`，性能最好。
+
+#### UNION
+
+UNION 的排序与分页都作用于**合并后的结果集**：各分支不输出 ORDER BY，整体语句在需要排序或分页时
+包裹为派生表（`SELECT * FROM ( ... UNION ALL ... ) A ORDER BY A.<输出列名> ...`）。
+调用方写的排序表达式会被映射成结果集的输出列名（`u.Name` → `A.Name`；SELECT 列带 `AS` 别名时映射为别名）；
+映射不到时抛 `NotSupportedException`。首个分支选的是 `*` 时输出列名无从得知，
+排序退化为去掉表前缀的列名，未指定排序时分页按序号 `ORDER BY 1` 排序。
 
 ### 数据库上下文
 

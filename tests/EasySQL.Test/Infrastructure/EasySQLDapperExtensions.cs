@@ -87,6 +87,38 @@ namespace EasySQL
                 commandType);
         }
 
+        /// <summary>
+        /// 分页查询（两次查询模式）——先查总记录数，再查当前页数据。
+        /// 分页语句不注入 <c>COUNT(*) OVER()</c> 窗口函数，避免大表深分页时的额外开销。
+        /// </summary>
+        /// <example>
+        /// <code>
+        /// var (items, total) = await qb.QueryPagedAsync&lt;User&gt;(conn, rowLimit: 20, rowOffset: 40);
+        /// </code>
+        /// </example>
+        /// <param name="qb">查询构建器。</param>
+        /// <param name="connection">数据库连接。</param>
+        /// <param name="rowLimit">每页记录数。</param>
+        /// <param name="rowOffset">偏移行数（从 0 开始）。</param>
+        /// <param name="transaction">数据库事务。</param>
+        /// <param name="commandTimeout">命令超时时间（秒）。</param>
+        /// <returns>当前页数据与总记录数。</returns>
+        public static async Task<(IEnumerable<T> Items, int Total)> QueryPagedAsync<T>(
+            this QueryBuilder qb,
+            IDbConnection connection,
+            int rowLimit,
+            int rowOffset = 0,
+            IDbTransaction? transaction = null,
+            int? commandTimeout = null)
+        {
+            var parameters = qb.Parameters.ToDynamicParameters();
+            int total = await connection.ExecuteScalarAsync<int>(
+                qb.BuildCountSql(), parameters, transaction, commandTimeout);
+            var items = await connection.QueryAsync<T>(
+                qb.BuildSql(rowLimit, rowOffset, includeTotalCount: false), parameters, transaction, commandTimeout);
+            return (items, total);
+        }
+
         // ================================================================
         // 方案 B：快捷执行方法 — UpdateBuilder
         // ================================================================
